@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — KHÔNG commit .env.local (có secrets thật)
+.env.local
+.env.*.local
+# .env.example ĐƯỢC commit (chỉ có placeholder)
 
 # vercel
 .vercel
@@ -39,3 +41,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sentry
+.sentryclirc
+
+# Drizzle
+/src/db/migrations/*.sql
+# Giữ lại migrations sau khi review
+
+# OS
+Thumbs.db
