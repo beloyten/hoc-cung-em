@@ -46,6 +46,9 @@ export default async function ParentHomePage() {
         <Link href="/parent/link" className={"ml-2 " + buttonVariants({ variant: "outline" })}>
           Liên kết với con
         </Link>
+        <Link href="/parent/reports" className={"ml-2 " + buttonVariants({ variant: "outline" })}>
+          Báo cáo tuần
+        </Link>
       </div>
     </main>
   )
