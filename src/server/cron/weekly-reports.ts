@@ -8,12 +8,15 @@ import { db } from "@/db"
 import {
   aiChats,
   aiMessages,
+  parents,
+  parentStudents,
   students,
   studySessions,
   studyTopics,
   weeklyReports,
 } from "@/db/schema"
 import { FLASH, google } from "@/server/ai/client"
+import { sendWeeklyReportEmail } from "@/server/email/weekly-report"
 import { previousWeekStartICT, weekRangeUTC } from "./week"
 
 const reportSchema = z.object({
@@ -147,6 +150,45 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
         areasToImprove: object.areasToImprove,
         suggestedActions: object.suggestedActions,
       })
+
+      // Gửi email cho từng phụ huynh đã liên kết và đã được giáo viên duyệt
+      const recipients = await db
+        .select({ name: parents.fullName, email: parents.email })
+        .from(parentStudents)
+        .innerJoin(parents, eq(parents.id, parentStudents.parentId))
+        .where(
+          and(eq(parentStudents.studentId, studentId), eq(parentStudents.verifiedByTeacher, true)),
+        )
+
+      let sent = false
+      for (const r of recipients) {
+        try {
+          await sendWeeklyReportEmail({
+            to: r.email,
+            parentName: r.name,
+            studentName: studentRow.fullName,
+            weekStart,
+            summary: object.summary,
+            highlights: object.progressHighlights,
+            improve: object.areasToImprove,
+            actions: object.suggestedActions,
+          })
+          sent = true
+        } catch (e) {
+          result.errors.push({
+            studentId,
+            message: `email ${r.email}: ${e instanceof Error ? e.message : String(e)}`,
+          })
+        }
+      }
+      if (sent) {
+        await db
+          .update(weeklyReports)
+          .set({ sentToEmailAt: new Date() })
+          .where(
+            and(eq(weeklyReports.studentId, studentId), eq(weeklyReports.weekStart, weekStart)),
+          )
+      }
 
       result.generated++
     } catch (e) {
