@@ -1,5 +1,14 @@
-// src/db/schema/index.ts
-// Export tất cả schema tables từ đây
-// TODO: thêm tables theo DATABASE_SCHEMA.md
-
-export {}
+export * from "./teachers"
+export * from "./parents"
+export * from "./classes"
+export * from "./students"
+export * from "./parent-students"
+export * from "./study-topics"
+export * from "./study-sessions"
+export * from "./ai-chats"
+export * from "./ai-messages"
+export * from "./notebook-uploads"
+export * from "./teacher-reviews"
+export * from "./weekly-insights"
+export * from "./weekly-reports"
+export * from "./audit-logs"

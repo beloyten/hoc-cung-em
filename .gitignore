@@ -45,9 +45,8 @@ next-env.d.ts
 # Sentry
 .sentryclirc
 
-# Drizzle
-/src/db/migrations/*.sql
-# Giữ lại migrations sau khi review
+# Drizzle — migrations are committed; ignore only journal/snapshot draft caches
+# (none for now; SQL files kept for audit + CI)
 
 # Serwist (PWA service worker — generated khi build)
 public/sw*
