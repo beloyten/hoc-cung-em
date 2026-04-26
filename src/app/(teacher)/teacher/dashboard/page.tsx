@@ -100,6 +100,9 @@ export default async function TeacherDashboardPage() {
           <Link href="/teacher/insights" className={buttonVariants({ variant: "outline" })}>
             Insight tuần
           </Link>
+          <Link href="/teacher/uploads" className={buttonVariants({ variant: "outline" })}>
+            Vở học sinh
+          </Link>
         </div>
       </div>
     </main>
