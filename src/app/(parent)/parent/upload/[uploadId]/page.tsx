@@ -4,7 +4,7 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { and, eq } from "drizzle-orm"
 import { db } from "@/db"
-import { notebookUploads, parentStudents, students } from "@/db/schema"
+import { notebookUploads, parentStudents, students, teacherReviews } from "@/db/schema"
 import { buttonVariants } from "@/components/ui/button"
 import { AuthError, requireParent } from "@/server/auth"
 import { signedNotebookUrl } from "@/server/storage/notebooks"
@@ -54,6 +54,12 @@ export default async function ParentUploadDetail({
     .limit(1)
   if (!link) redirect("/parent/upload")
 
+  const [review] = await db
+    .select({ rating: teacherReviews.rating, note: teacherReviews.note })
+    .from(teacherReviews)
+    .where(eq(teacherReviews.uploadId, uploadId))
+    .limit(1)
+
   const urls = await Promise.all(row.imagePaths.map((p) => signedNotebookUrl(p, 60 * 30)))
 
   return (
@@ -73,6 +79,16 @@ export default async function ParentUploadDetail({
           <img key={i} src={url} alt={`Trang ${i + 1}`} className="w-full rounded-xl border" />
         ))}
       </div>
+
+      {review && (
+        <section className="bg-card mt-4 rounded-xl border p-4 shadow-sm">
+          <p className="text-xs font-semibold">Nhận xét của cô</p>
+          <p className="mt-1 text-sm">{review.rating === "good" ? "Tốt" : "Cần hỗ trợ"}</p>
+          {review.note && (
+            <p className="text-muted-foreground mt-1 text-sm whitespace-pre-wrap">{review.note}</p>
+          )}
+        </section>
+      )}
 
       {row.note && (
         <p className="bg-muted mt-4 rounded-xl p-3 text-sm whitespace-pre-wrap">{row.note}</p>
