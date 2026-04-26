@@ -1,7 +1,9 @@
 // src/app/(parent)/parent/home/page.tsx
 import type { Metadata } from "next"
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { SignOutButton } from "@/components/sign-out-button"
+import { buttonVariants } from "@/components/ui/button"
 import { AI_PERSONA_NAME, APP_NAME } from "@/lib/constants"
 import { AuthError, requireParent } from "@/server/auth"
 
@@ -34,9 +36,13 @@ export default async function ParentHomePage() {
       </div>
 
       <div className="bg-card rounded-2xl border p-6 shadow-sm">
-        <p className="text-muted-foreground text-sm">
-          Liên kết với con, chụp vở, hoặc bắt đầu trò chuyện với {AI_PERSONA_NAME} — sắp triển khai.
+        <p className="text-muted-foreground mb-4 text-sm">
+          Bắt đầu một buổi học cùng {AI_PERSONA_NAME} — cô sẽ gợi ý từng bước để con tự tìm ra đáp
+          án.
         </p>
+        <Link href="/parent/chat" className={buttonVariants({ variant: "default" })}>
+          Trò chuyện cùng {AI_PERSONA_NAME}
+        </Link>
       </div>
     </main>
   )
