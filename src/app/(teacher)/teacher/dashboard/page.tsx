@@ -90,9 +90,14 @@ export default async function TeacherDashboardPage() {
 
       <div className="bg-card rounded-2xl border p-6 shadow-sm">
         <p className="text-muted-foreground mb-3 text-sm">Quản lý nội dung Cô Mây dạy con bạn:</p>
-        <Link href="/teacher/topics" className={buttonVariants({ variant: "outline" })}>
-          Chủ đề tuần
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/teacher/topics" className={buttonVariants({ variant: "outline" })}>
+            Chủ đề tuần
+          </Link>
+          <Link href="/teacher/sessions" className={buttonVariants({ variant: "outline" })}>
+            Lịch sử học
+          </Link>
+        </div>
       </div>
     </main>
   )
