@@ -6,7 +6,7 @@ import { AI_PERSONA_NAME, APP_NAME, APP_SLOGAN, ROUTES } from "@/lib/constants"
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col bg-gradient-to-b from-sky-50 via-white to-white">
+    <div className="flex flex-1 flex-col bg-linear-to-b from-sky-50 via-white to-white">
       {/* Header */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-3">

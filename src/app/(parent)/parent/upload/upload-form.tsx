@@ -56,8 +56,12 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm font-medium">Chọn con</label>
+        <label htmlFor="upload-student" className="mb-1 block text-sm font-medium">
+          Chọn con
+        </label>
         <select
+          id="upload-student"
+          title="Chọn con"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
           className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -71,8 +75,12 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Ảnh vở (tối đa 6, mỗi ảnh ≤10MB)</label>
+        <label htmlFor="upload-files" className="mb-1 block text-sm font-medium">
+          Ảnh vở (tối đa 6, mỗi ảnh ≤10MB)
+        </label>
         <input
+          id="upload-files"
+          title="Chọn ảnh vở"
           type="file"
           accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
           multiple
