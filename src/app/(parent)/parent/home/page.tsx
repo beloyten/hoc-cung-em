@@ -43,6 +43,9 @@ export default async function ParentHomePage() {
         <Link href="/parent/chat" className={buttonVariants({ variant: "default" })}>
           Trò chuyện cùng {AI_PERSONA_NAME}
         </Link>
+        <Link href="/parent/link" className={"ml-2 " + buttonVariants({ variant: "outline" })}>
+          Liên kết với con
+        </Link>
       </div>
     </main>
   )

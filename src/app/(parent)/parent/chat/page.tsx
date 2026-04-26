@@ -51,10 +51,10 @@ export default async function ParentChatIndexPage() {
       {linkedStudents.length === 0 ? (
         <div className="bg-card rounded-2xl border p-6 shadow-sm">
           <p className="mb-3 text-sm">
-            Bạn chưa liên kết với con nào. Liên hệ giáo viên để lấy mã lớp và liên kết.
+            Bạn chưa liên kết với con nào. Nhập mã lớp do giáo viên cung cấp để bắt đầu.
           </p>
-          <Link href="/parent/home" className="text-primary underline-offset-4 hover:underline">
-            Quay lại trang chính
+          <Link href="/parent/link" className={buttonVariants({ variant: "default" })}>
+            Liên kết với con
           </Link>
         </div>
       ) : (
