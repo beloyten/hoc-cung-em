@@ -49,5 +49,9 @@ next-env.d.ts
 /src/db/migrations/*.sql
 # Giữ lại migrations sau khi review
 
+# Serwist (PWA service worker — generated khi build)
+public/sw*
+public/swe-worker*
+
 # OS
 Thumbs.db
