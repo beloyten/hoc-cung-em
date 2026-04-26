@@ -30,13 +30,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedPaths = ["/teacher", "/parent"]
-  const isProtected = protectedPaths.some((p) => request.nextUrl.pathname.startsWith(p))
+  const { pathname } = request.nextUrl
+
+  // Protected routes (dashboard) — phải đăng nhập
+  const protectedPrefixes = ["/teacher", "/parent", "/onboarding"]
+  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
+    url.searchParams.set("next", pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Đã đăng nhập mà ghé /login → đẩy về home (callback sẽ tự route theo role)
+  if (user && pathname === "/login") {
+    const url = request.nextUrl.clone()
+    url.pathname = "/"
     return NextResponse.redirect(url)
   }
 
