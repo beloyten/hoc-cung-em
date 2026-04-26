@@ -89,9 +89,10 @@ export default async function TeacherDashboardPage() {
       </section>
 
       <div className="bg-card rounded-2xl border p-6 shadow-sm">
-        <p className="text-muted-foreground text-sm">
-          Các chức năng khác (chủ đề học, duyệt vở, gợi ý dạy học) sẽ được triển khai tiếp.
-        </p>
+        <p className="text-muted-foreground mb-3 text-sm">Quản lý nội dung Cô Mây dạy con bạn:</p>
+        <Link href="/teacher/topics" className={buttonVariants({ variant: "outline" })}>
+          Chủ đề tuần
+        </Link>
       </div>
     </main>
   )
