@@ -9,9 +9,12 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl
+  const { searchParams } = request.nextUrl
   const code = searchParams.get("code")
   const next = searchParams.get("next")
+
+  // Luôn dùng APP_URL từ env để tránh Vercel/Cloudflare forward trả về http:// thay vì https://
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`)

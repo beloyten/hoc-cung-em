@@ -1,0 +1,51 @@
+import type { Metadata } from "next"
+import Image from "next/image"
+import Link from "next/link"
+import { redirect } from "next/navigation"
+import { APP_NAME } from "@/lib/constants"
+import { VerifyOTPForm } from "./verify-form"
+
+export const metadata: Metadata = {
+  title: "Nhập mã OTP",
+}
+
+export default async function VerifyOTPPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ phone?: string }>
+}) {
+  const { phone } = await searchParams
+  if (!phone) redirect("/login")
+
+  return (
+    <main className="container mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-4 py-8">
+      <Link href="/" className="mb-6 flex flex-col items-center gap-3">
+        <Image
+          src="/icons/logo.png"
+          alt={APP_NAME}
+          width={80}
+          height={80}
+          className="rounded-2xl"
+          priority
+        />
+        <span className="text-2xl font-bold">{APP_NAME}</span>
+      </Link>
+
+      <div className="bg-card w-full rounded-2xl border p-6 shadow-sm">
+        <h1 className="mb-1 text-xl font-semibold">Nhập mã xác nhận</h1>
+        <p className="text-muted-foreground mb-6 text-sm">
+          Mã OTP 6 chữ số đã được gửi qua SMS đến số{" "}
+          <span className="text-foreground font-medium">{phone}</span>.
+        </p>
+        <VerifyOTPForm phone={phone} />
+      </div>
+
+      <Link
+        href="/login"
+        className="text-muted-foreground mt-6 text-center text-xs underline-offset-4 hover:underline"
+      >
+        Đổi số điện thoại
+      </Link>
+    </main>
+  )
+}
