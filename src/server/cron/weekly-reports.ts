@@ -162,6 +162,7 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
 
       let sent = false
       for (const r of recipients) {
+        if (!r.email) continue // phone-only parent — skip email report
         try {
           await sendWeeklyReportEmail({
             to: r.email,
