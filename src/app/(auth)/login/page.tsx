@@ -26,25 +26,17 @@ export default function LoginPage() {
       </Link>
 
       <div className="bg-card w-full rounded-2xl border p-6 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold">Đăng nhập</h1>
+        <h1 className="mb-1 text-xl font-semibold">Đăng nhập / Đăng ký</h1>
         <p className="text-muted-foreground mb-6 text-sm">
-          Chúng tôi sẽ gửi đường link đăng nhập đến email của bạn.
+          Nhập email — chúng tôi sẽ gửi link đăng nhập. Lần đầu sẽ được mời chọn vai trò (Phụ huynh
+          / Giáo viên).
         </p>
         <LoginForm />
       </div>
 
-      <div className="mt-6 flex flex-col gap-2 text-center text-sm">
-        <p className="text-muted-foreground">Chưa có tài khoản?</p>
-        <div className="flex justify-center gap-3">
-          <Link href="/register-parent" className="text-primary font-medium hover:underline">
-            Phụ huynh
-          </Link>
-          <span className="text-muted-foreground">·</span>
-          <Link href="/register-teacher" className="text-primary font-medium hover:underline">
-            Giáo viên
-          </Link>
-        </div>
-      </div>
+      <p className="text-muted-foreground mt-6 text-center text-xs">
+        Không cần mật khẩu — đăng nhập an toàn qua email (passwordless).
+      </p>
     </main>
   )
 }

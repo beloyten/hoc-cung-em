@@ -2,7 +2,6 @@
 export const APP_NAME = "HocCungEm"
 export const APP_SLOGAN = "AI không làm bài hộ. AI học cùng em."
 export const AI_PERSONA_NAME = "Cô Mây"
-export const CLASS_NAME = "4A1"
 
 export const ROUTES = {
   home: "/",

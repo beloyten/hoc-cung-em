@@ -6,7 +6,9 @@ import { redirect } from "next/navigation"
 import { and, eq } from "drizzle-orm"
 import { db } from "@/db"
 import { classes, parentStudents, students } from "@/db/schema"
+import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
+import { BackLink, EmptyState, PageContainer, PageHeader } from "@/components/page-layout"
 import { AI_PERSONA_NAME } from "@/lib/constants"
 import { AuthError, requireParent } from "@/server/auth"
 import { StartSessionButton } from "./start-session-button"
@@ -40,48 +42,48 @@ export default async function ParentChatIndexPage() {
     .where(and(eq(parentStudents.parentId, parentId)))
 
   return (
-    <main className="container mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Trò chuyện cùng {AI_PERSONA_NAME}</h1>
-        <p className="text-muted-foreground text-sm">
-          Chọn con để {AI_PERSONA_NAME} hỗ trợ học bài.
-        </p>
-      </div>
+    <PageContainer size="sm">
+      <BackLink href="/parent/home">Trang chính</BackLink>
+      <PageHeader
+        className="mt-2"
+        title={`Trò chuyện cùng ${AI_PERSONA_NAME}`}
+        description={`Chọn con để ${AI_PERSONA_NAME} hỗ trợ học bài.`}
+      />
 
       {linkedStudents.length === 0 ? (
-        <div className="bg-card rounded-2xl border p-6 shadow-sm">
-          <p className="mb-3 text-sm">
-            Bạn chưa liên kết với con nào. Nhập mã lớp do giáo viên cung cấp để bắt đầu.
-          </p>
-          <Link href="/parent/link" className={buttonVariants({ variant: "default" })}>
-            Liên kết với con
-          </Link>
-        </div>
+        <EmptyState
+          icon="👨‍👩‍👧"
+          title="Bạn chưa liên kết với con nào"
+          description="Nhập mã lớp do giáo viên cung cấp để bắt đầu."
+          action={
+            <Link href="/parent/link" className={buttonVariants()}>
+              Liên kết với con
+            </Link>
+          }
+        />
       ) : (
         <ul className="space-y-3">
           {linkedStudents.map((s) => (
             <li
               key={s.studentId}
-              className="bg-card flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+              className="bg-card flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
             >
-              <div>
-                <p className="font-medium">{s.studentName}</p>
-                <p className="text-muted-foreground text-xs">
-                  Lớp {s.className}
-                  {s.verified ? "" : " · chờ giáo viên xác nhận"}
-                </p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium">{s.studentName}</p>
+                  {!s.verified && (
+                    <Badge variant="outline" className="text-xs">
+                      Chờ giáo viên xác nhận
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground text-xs">Lớp {s.className}</p>
               </div>
               <StartSessionButton studentId={s.studentId} disabled={!s.verified} />
             </li>
           ))}
         </ul>
       )}
-
-      <div className="mt-6">
-        <Link href="/parent/home" className={buttonVariants({ variant: "ghost" })}>
-          ← Quay lại
-        </Link>
-      </div>
-    </main>
+    </PageContainer>
   )
 }

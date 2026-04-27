@@ -1,13 +1,13 @@
 // src/app/(parent)/parent/link/page.tsx
 import type { Metadata } from "next"
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { and, eq, isNull } from "drizzle-orm"
 import { db } from "@/db"
 import { classes, students } from "@/db/schema"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BackLink, PageContainer, PageHeader } from "@/components/page-layout"
 import { AuthError, requireParent } from "@/server/auth"
 import { lookupClassByCodeAction } from "./actions"
 import { LinkChildForm } from "./link-child-form"
@@ -56,19 +56,21 @@ export default async function ParentLinkPage({
   }
 
   return (
-    <main className="container mx-auto max-w-xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Liên kết với con</h1>
-        <p className="text-muted-foreground text-sm">
-          Nhập mã lớp do giáo viên cung cấp để tìm con của bạn.
-        </p>
-      </div>
+    <PageContainer size="sm">
+      <BackLink href="/parent/home">Trang chính</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Liên kết với con"
+        description="Nhập mã lớp do giáo viên cung cấp để tìm con của bạn."
+      />
 
       <form
         action={lookupClassByCodeAction}
         className="bg-card mb-6 space-y-3 rounded-2xl border p-5 shadow-sm"
       >
-        <Label htmlFor="code">Mã lớp</Label>
+        <Label htmlFor="code" className="text-sm font-medium">
+          Mã lớp
+        </Label>
         <Input
           id="code"
           name="code"
@@ -76,8 +78,13 @@ export default async function ParentLinkPage({
           defaultValue={code ?? ""}
           required
           autoComplete="off"
-          className="uppercase"
+          inputMode="text"
+          maxLength={6}
+          className="font-mono text-base tracking-widest uppercase"
         />
+        <p className="text-muted-foreground text-xs">
+          Mã có 6 ký tự (chữ cái và số), không phân biệt hoa/thường.
+        </p>
         {sp.error === "invalid_code" && (
           <p className="text-destructive text-xs">Mã không hợp lệ.</p>
         )}
@@ -85,9 +92,14 @@ export default async function ParentLinkPage({
       </form>
 
       {code && !foundClass && (
-        <p className="text-destructive text-sm">
-          Không tìm thấy lớp với mã <strong>{code}</strong>. Hãy kiểm tra lại với giáo viên.
-        </p>
+        <div className="border-destructive/30 bg-destructive/5 mb-4 rounded-xl border p-4 text-sm">
+          <p className="text-destructive font-medium">
+            Không tìm thấy lớp với mã <strong>{code}</strong>
+          </p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Hãy kiểm tra lại với giáo viên — mã có thể bị nhập sai hoặc lớp đã đổi mã.
+          </p>
+        </div>
       )}
 
       {foundClass && foundClass.classStudents.length === 0 && (
@@ -99,17 +111,11 @@ export default async function ParentLinkPage({
       {foundClass && foundClass.classStudents.length > 0 && (
         <div className="bg-card rounded-2xl border p-5 shadow-sm">
           <p className="mb-3 text-sm">
-            Lớp <strong>{foundClass.name}</strong> · chọn con của bạn:
+            Tìm thấy lớp <strong>{foundClass.name}</strong> · chọn con của bạn:
           </p>
           <LinkChildForm classId={foundClass.id} students={foundClass.classStudents} />
         </div>
       )}
-
-      <div className="mt-6">
-        <Link href="/parent/home" className={buttonVariants({ variant: "ghost" })}>
-          ← Về trang chính
-        </Link>
-      </div>
-    </main>
+    </PageContainer>
   )
 }

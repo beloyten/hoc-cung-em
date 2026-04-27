@@ -11,6 +11,7 @@ const withSerwist = withSerwistInit({
 })
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   images: {
     // Supabase Storage
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],

@@ -5,7 +5,13 @@ import { redirect } from "next/navigation"
 import { desc, eq, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import { notebookUploads, parentStudents, students } from "@/db/schema"
-import { buttonVariants } from "@/components/ui/button"
+import {
+  BackLink,
+  EmptyState,
+  PageContainer,
+  PageHeader,
+  SectionHeader,
+} from "@/components/page-layout"
 import { AuthError, requireParent } from "@/server/auth"
 import { signedNotebookUrl } from "@/server/storage/notebooks"
 import { UploadForm } from "./upload-form"
@@ -68,46 +74,63 @@ export default async function ParentUploadPage() {
   const thumbById = new Map(thumbs.map((t) => [t.id, t.url]))
 
   return (
-    <main className="container mx-auto max-w-2xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Tải ảnh vở của con</h1>
-        <p className="text-muted-foreground text-sm">
-          Cô giáo sẽ xem và phản hồi từng bài. Ảnh được lưu riêng tư cho lớp.
-        </p>
-      </header>
+    <PageContainer size="sm">
+      <BackLink href="/parent/home">Trang chính</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Tải ảnh vở của con"
+        description="Cô giáo sẽ xem và phản hồi từng bài. Ảnh được lưu riêng tư cho lớp."
+      />
 
-      <section className="bg-card mb-8 rounded-2xl border p-6 shadow-sm">
+      <section className="bg-card mb-10 rounded-2xl border p-6 shadow-sm">
         <UploadForm childrenList={myChildren} />
       </section>
 
-      <h2 className="mb-3 text-lg font-semibold">Đã tải</h2>
+      <SectionHeader title="Đã tải gần đây" count={visible.length} />
       {visible.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Chưa có ảnh nào.</p>
+        <EmptyState
+          icon="📷"
+          title="Chưa có ảnh vở nào"
+          description="Khi bạn tải ảnh, cô giáo sẽ thấy và phản hồi."
+        />
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {visible.map((u) => {
             const thumb = thumbById.get(u.id)
             return (
-              <li key={u.id} className="bg-card overflow-hidden rounded-xl border shadow-sm">
+              <li
+                key={u.id}
+                className="bg-card hover:border-primary/40 group overflow-hidden rounded-xl border shadow-sm transition-colors"
+              >
                 <Link href={`/parent/upload/${u.id}`} className="block">
-                  {thumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumb}
-                      alt="vở của con"
-                      className="aspect-square w-full object-cover"
-                    />
-                  ) : (
-                    <div className="bg-muted aspect-square w-full" />
-                  )}
-                  <div className="p-2 text-xs">
-                    <p className="font-medium">{childNameById.get(u.studentId) ?? ""}</p>
-                    <p className="text-muted-foreground">
+                  <div className="relative aspect-square w-full bg-gray-100">
+                    {thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={thumb}
+                        alt="vở của con"
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-3xl">
+                        📷
+                      </div>
+                    )}
+                    {u.imagePaths.length > 1 && (
+                      <span className="absolute top-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        {u.imagePaths.length} ảnh
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="truncate text-sm font-medium">
+                      {childNameById.get(u.studentId) ?? ""}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
                       {new Intl.DateTimeFormat("vi-VN", {
                         day: "2-digit",
                         month: "2-digit",
                       }).format(new Date(u.uploadedAt))}
-                      {u.imagePaths.length > 1 ? ` · ${u.imagePaths.length} ảnh` : ""}
                     </p>
                   </div>
                 </Link>
@@ -116,12 +139,6 @@ export default async function ParentUploadPage() {
           })}
         </ul>
       )}
-
-      <div className="mt-8">
-        <Link href="/parent/home" className={buttonVariants({ variant: "ghost" })}>
-          ← Trang chính
-        </Link>
-      </div>
-    </main>
+    </PageContainer>
   )
 }

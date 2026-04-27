@@ -5,7 +5,9 @@ import { redirect } from "next/navigation"
 import { desc, eq } from "drizzle-orm"
 import { db } from "@/db"
 import { aiChats, classes, students, studySessions, studyTopics } from "@/db/schema"
+import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
+import { BackLink, EmptyState, PageContainer, PageHeader } from "@/components/page-layout"
 import { AI_PERSONA_NAME } from "@/lib/constants"
 import { AuthError, requireTeacher } from "@/server/auth"
 
@@ -18,6 +20,15 @@ function formatDateTime(d: Date): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(d)
+}
+
+const OUTCOME_VI: Record<
+  string,
+  { label: string; tone: "default" | "secondary" | "destructive" | "outline" }
+> = {
+  completed: { label: "Hoàn thành", tone: "default" },
+  abandoned: { label: "Bỏ dở", tone: "outline" },
+  needs_help: { label: "Cần hỗ trợ", tone: "destructive" },
 }
 
 export default async function TeacherSessionsPage() {
@@ -57,57 +68,63 @@ export default async function TeacherSessionsPage() {
   const visible = sessions.filter((s) => s.sessionId)
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Lịch sử học</h1>
-        <p className="text-muted-foreground text-sm">
-          50 phiên học gần nhất giữa học sinh và {AI_PERSONA_NAME}.
-        </p>
-      </div>
+    <PageContainer>
+      <BackLink href="/teacher/dashboard">Bảng điều khiển</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Lịch sử học"
+        description={`50 phiên học gần nhất giữa học sinh và ${AI_PERSONA_NAME}.`}
+      />
 
       {visible.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          Chưa có phiên học nào. Khi phụ huynh bắt đầu trò chuyện cùng {AI_PERSONA_NAME}, các phiên
-          sẽ hiện ở đây.
-        </p>
+        <EmptyState
+          icon="💬"
+          title="Chưa có phiên học nào"
+          description={`Khi phụ huynh bắt đầu trò chuyện cùng ${AI_PERSONA_NAME}, các phiên học sẽ hiện ở đây.`}
+        />
       ) : (
         <ul className="space-y-3">
-          {visible.map((s) => (
-            <li key={s.sessionId} className="bg-card rounded-2xl border p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">
-                    {s.studentName}
-                    <span className="text-muted-foreground"> · Lớp {s.className}</span>
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {formatDateTime(new Date(s.startedAt))}
-                    {s.topicTitle ? ` · ${s.topicTitle}` : ""}
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    {s.totalTokens ?? 0} tokens
-                    {s.durationMs ? ` · ${Math.round(s.durationMs / 1000)}s` : ""}
-                  </p>
+          {visible.map((s) => {
+            const outcome = s.outcome ? OUTCOME_VI[s.outcome] : null
+            return (
+              <li
+                key={s.sessionId}
+                className="bg-card hover:border-primary/30 rounded-2xl border p-4 shadow-sm transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{s.studentName}</p>
+                      <span className="text-muted-foreground text-xs">· Lớp {s.className}</span>
+                      {outcome && (
+                        <Badge variant={outcome.tone} className="text-xs">
+                          {outcome.label}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {formatDateTime(new Date(s.startedAt))}
+                      {s.topicTitle ? ` · ${s.topicTitle}` : ""}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {s.totalTokens ?? 0} tokens
+                      {s.durationMs ? ` · ${Math.round(s.durationMs / 1000)}s` : ""}
+                    </p>
+                  </div>
+                  {s.chatId && (
+                    <Link
+                      href={`/teacher/sessions/${s.chatId}`}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      Xem
+                    </Link>
+                  )}
                 </div>
-                {s.chatId && (
-                  <Link
-                    href={`/teacher/sessions/${s.chatId}`}
-                    className={buttonVariants({ variant: "outline", size: "sm" })}
-                  >
-                    Xem
-                  </Link>
-                )}
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
-
-      <div className="mt-8">
-        <Link href="/teacher/dashboard" className={buttonVariants({ variant: "ghost" })}>
-          ← Bảng điều khiển
-        </Link>
-      </div>
-    </main>
+    </PageContainer>
   )
 }

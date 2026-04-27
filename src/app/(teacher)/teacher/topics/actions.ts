@@ -62,6 +62,49 @@ export async function createTopicAction(formData: FormData): Promise<Result<{ id
   return ok({ id: row.id })
 }
 
+const updateSchema = createSchema.omit({ classId: true }).extend({ topicId: z.string().uuid() })
+
+export async function updateTopicAction(formData: FormData): Promise<Result<{ id: string }>> {
+  const parsed = updateSchema.safeParse({
+    topicId: formData.get("topicId"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    weekNumber: formData.get("weekNumber"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    context: formData.get("context") || undefined,
+  })
+  if (!parsed.success) return err("VALIDATION", "Dữ liệu không hợp lệ.")
+
+  const { teacher } = await requireTeacher()
+
+  const [existing] = await db
+    .select({ id: studyTopics.id, classId: studyTopics.classId })
+    .from(studyTopics)
+    .where(eq(studyTopics.id, parsed.data.topicId))
+    .limit(1)
+  if (!existing) return err("NOT_FOUND", "Không tìm thấy chủ đề.")
+
+  const owns = await assertTeacherOwnsClass(teacher.id, existing.classId)
+  if (!owns) return err("FORBIDDEN", "Bạn không có quyền sửa chủ đề này.")
+
+  await db
+    .update(studyTopics)
+    .set({
+      title: parsed.data.title,
+      description: parsed.data.description,
+      weekNumber: parsed.data.weekNumber,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      context: parsed.data.context,
+    })
+    .where(eq(studyTopics.id, parsed.data.topicId))
+
+  revalidatePath("/teacher/topics")
+  revalidatePath(`/teacher/topics/${parsed.data.topicId}/edit`)
+  return ok({ id: parsed.data.topicId })
+}
+
 const deleteSchema = z.object({ topicId: z.string().uuid() })
 
 export async function deleteTopicAction(input: {

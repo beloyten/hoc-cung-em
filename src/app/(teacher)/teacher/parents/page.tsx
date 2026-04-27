@@ -1,11 +1,17 @@
 // src/app/(teacher)/teacher/parents/page.tsx
 import type { Metadata } from "next"
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { and, eq, isNull } from "drizzle-orm"
 import { db } from "@/db"
 import { classes, parents, parentStudents, students } from "@/db/schema"
-import { buttonVariants } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  BackLink,
+  EmptyState,
+  PageContainer,
+  PageHeader,
+  SectionHeader,
+} from "@/components/page-layout"
 import { AuthError, requireTeacher } from "@/server/auth"
 import { VerifyLinkButton } from "./verify-link-button"
 
@@ -54,36 +60,39 @@ export default async function TeacherParentsPage() {
   const verified = rows.filter((r) => r.verified)
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Duyệt phụ huynh</h1>
-        <p className="text-muted-foreground text-sm">
-          Xác nhận liên kết giữa phụ huynh và học sinh trước khi họ trò chuyện cùng Cô Mây.
-        </p>
-      </div>
+    <PageContainer>
+      <BackLink href="/teacher/dashboard">Bảng điều khiển</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Duyệt phụ huynh"
+        description="Xác nhận liên kết giữa phụ huynh và học sinh trước khi họ trò chuyện cùng Cô Mây."
+      />
 
       <section className="mb-8">
-        <h2 className="mb-3 text-base font-semibold">Chờ duyệt ({pending.length})</h2>
+        <SectionHeader title="Chờ duyệt" count={pending.length} />
         {pending.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Không có yêu cầu nào đang chờ.</p>
+          <EmptyState
+            icon="✅"
+            title="Không có yêu cầu nào đang chờ"
+            description="Khi có phụ huynh đăng ký liên kết với học sinh, họ sẽ xuất hiện ở đây."
+          />
         ) : (
           <ul className="space-y-3">
             {pending.map((r) => (
               <li
                 key={r.linkId}
-                className="bg-card flex items-center justify-between rounded-2xl border p-4 shadow-sm"
+                className="bg-card flex flex-col gap-3 rounded-2xl border p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
-                <div>
-                  <p className="font-medium">
-                    {r.parentName}
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {RELATIONSHIP_VI[r.relationship] ?? r.relationship}
-                    </span>
-                  </p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{r.parentName}</p>
+                    <Badge variant="secondary" className="text-xs">
+                      {RELATIONSHIP_VI[r.relationship] ?? r.relationship}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-1 text-xs break-all">{r.parentEmail}</p>
                   <p className="text-muted-foreground text-xs">
-                    {r.parentEmail} · liên kết với <strong>{r.studentName}</strong> (Lớp{" "}
-                    {r.className})
+                    Liên kết với <strong>{r.studentName}</strong> · Lớp {r.className}
                   </p>
                 </div>
                 <VerifyLinkButton linkId={r.linkId} />
@@ -94,25 +103,28 @@ export default async function TeacherParentsPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">Đã duyệt ({verified.length})</h2>
+        <SectionHeader title="Đã duyệt" count={verified.length} />
         {verified.length === 0 ? (
           <p className="text-muted-foreground text-sm">Chưa có liên kết nào.</p>
         ) : (
           <ul className="space-y-2">
             {verified.map((r) => (
-              <li key={r.linkId} className="text-muted-foreground text-sm">
-                {r.parentName} · {r.studentName} (Lớp {r.className})
+              <li
+                key={r.linkId}
+                className="bg-card flex items-center justify-between rounded-xl border px-4 py-2 text-sm"
+              >
+                <span>
+                  <strong>{r.parentName}</strong>{" "}
+                  <span className="text-muted-foreground">
+                    · {RELATIONSHIP_VI[r.relationship] ?? r.relationship} của {r.studentName}
+                  </span>
+                </span>
+                <span className="text-muted-foreground text-xs">Lớp {r.className}</span>
               </li>
             ))}
           </ul>
         )}
       </section>
-
-      <div className="mt-8">
-        <Link href="/teacher/dashboard" className={buttonVariants({ variant: "ghost" })}>
-          ← Bảng điều khiển
-        </Link>
-      </div>
-    </main>
+    </PageContainer>
   )
 }

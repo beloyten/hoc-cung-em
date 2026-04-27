@@ -1,11 +1,10 @@
 // src/app/(teacher)/teacher/insights/page.tsx
 import type { Metadata } from "next"
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { desc, eq, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import { classes, weeklyInsights } from "@/db/schema"
-import { buttonVariants } from "@/components/ui/button"
+import { BackLink, EmptyState, PageContainer, PageHeader } from "@/components/page-layout"
 import { AuthError, requireTeacher } from "@/server/auth"
 
 export const metadata: Metadata = {
@@ -74,76 +73,95 @@ export default async function TeacherInsightsPage() {
           .limit(20)
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Insight tuần</h1>
-        <p className="text-muted-foreground text-sm">
-          Tổng hợp khái niệm khó, học sinh cần chú ý và gợi ý dạy tuần tới.
-        </p>
-      </header>
+    <PageContainer>
+      <BackLink href="/teacher/dashboard">Bảng điều khiển</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Insight tuần"
+        description="Tổng hợp khái niệm khó, học sinh cần chú ý và gợi ý dạy tuần tới."
+      />
 
-      {insights.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Chưa có insight. Insight đầu tiên sẽ được tạo vào sáng thứ Hai sau tuần học đầu tiên.
-        </p>
+      {insights.length === 0 ? (
+        <EmptyState
+          icon="📊"
+          title="Chưa có insight nào"
+          description="Insight đầu tiên sẽ được tạo vào sáng thứ Hai sau tuần học đầu tiên của lớp."
+        />
+      ) : (
+        <ul className="space-y-4">
+          {insights.map((r) => {
+            const errors = bullets(r.topErrors)
+            const attention = attentionItems(r.studentAttention)
+            const teaching = bullets(r.teachingSuggestions)
+            return (
+              <li key={r.id} className="bg-card rounded-2xl border p-5 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b pb-3">
+                  <p className="font-semibold">{classNameById.get(r.classId) ?? "Lớp"}</p>
+                  <p className="text-muted-foreground text-xs">
+                    Tuần bắt đầu {formatWeek(r.weekStart)}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {errors.length > 0 && (
+                    <InsightBlock
+                      icon="⚠️"
+                      title="Khái niệm nhiều em vướng"
+                      items={errors.map((h, i) => (
+                        <span key={i}>{h}</span>
+                      ))}
+                    />
+                  )}
+                  {attention.length > 0 && (
+                    <InsightBlock
+                      icon="👀"
+                      title="Học sinh cần chú ý"
+                      items={attention.map((a, i) => (
+                        <span key={i}>
+                          <strong>{a.studentName}:</strong> {a.note}
+                        </span>
+                      ))}
+                    />
+                  )}
+                  {teaching.length > 0 && (
+                    <InsightBlock
+                      icon="💡"
+                      title="Gợi ý dạy tuần tới"
+                      items={teaching.map((h, i) => (
+                        <span key={i}>{h}</span>
+                      ))}
+                    />
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
       )}
+    </PageContainer>
+  )
+}
 
-      <ul className="space-y-3">
-        {insights.map((r) => {
-          const errors = bullets(r.topErrors)
-          const attention = attentionItems(r.studentAttention)
-          const teaching = bullets(r.teachingSuggestions)
-          return (
-            <li key={r.id} className="bg-card rounded-2xl border p-5 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="font-medium">{classNameById.get(r.classId) ?? "Lớp"}</p>
-                <p className="text-muted-foreground text-xs">
-                  Tuần bắt đầu {formatWeek(r.weekStart)}
-                </p>
-              </div>
-
-              {errors.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-xs font-semibold">Khái niệm nhiều em vướng</p>
-                  <ul className="ml-5 list-disc text-sm">
-                    {errors.map((h, i) => (
-                      <li key={i}>{h}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {attention.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-xs font-semibold">Học sinh cần chú ý</p>
-                  <ul className="ml-5 list-disc text-sm">
-                    {attention.map((a, i) => (
-                      <li key={i}>
-                        <span className="font-medium">{a.studentName}:</span> {a.note}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {teaching.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold">Gợi ý dạy tuần tới</p>
-                  <ul className="ml-5 list-disc text-sm">
-                    {teaching.map((h, i) => (
-                      <li key={i}>{h}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </li>
-          )
-        })}
+function InsightBlock({
+  icon,
+  title,
+  items,
+}: {
+  icon: string
+  title: string
+  items: React.ReactNode[]
+}) {
+  return (
+    <div>
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+        <span aria-hidden="true">{icon}</span>
+        {title}
+      </p>
+      <ul className="ml-6 list-disc space-y-1 text-sm">
+        {items.map((node, i) => (
+          <li key={i}>{node}</li>
+        ))}
       </ul>
-
-      <div className="mt-8">
-        <Link href="/teacher/dashboard" className={buttonVariants({ variant: "ghost" })}>
-          ← Bảng điều khiển
-        </Link>
-      </div>
-    </main>
+    </div>
   )
 }

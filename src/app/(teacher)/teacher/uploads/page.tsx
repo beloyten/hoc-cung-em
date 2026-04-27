@@ -5,12 +5,29 @@ import { redirect } from "next/navigation"
 import { desc, eq } from "drizzle-orm"
 import { db } from "@/db"
 import { classes, notebookUploads, students, teacherReviews } from "@/db/schema"
-import { buttonVariants } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  BackLink,
+  EmptyState,
+  PageContainer,
+  PageHeader,
+  SectionHeader,
+} from "@/components/page-layout"
 import { AuthError, requireTeacher } from "@/server/auth"
 import { signedNotebookUrl } from "@/server/storage/notebooks"
 
 export const metadata: Metadata = {
   title: "Vở học sinh",
+}
+
+type UploadRow = {
+  uploadId: string
+  imagePaths: string[]
+  uploadedAt: Date
+  studentName: string
+  className: string
+  reviewId: string | null
+  rating: string | null
 }
 
 export default async function TeacherUploadsPage() {
@@ -43,7 +60,7 @@ export default async function TeacherUploadsPage() {
     .orderBy(desc(notebookUploads.uploadedAt))
     .limit(40)
 
-  const visible = rows.filter((r) => r.imagePaths?.length)
+  const visible: UploadRow[] = rows.filter((r) => r.imagePaths?.length)
 
   const thumbs = await Promise.all(
     visible.map(async (r) => {
@@ -62,85 +79,97 @@ export default async function TeacherUploadsPage() {
   const reviewed = visible.filter((r) => r.reviewId)
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Vở học sinh</h1>
-        <p className="text-muted-foreground text-sm">
-          Phụ huynh tải ảnh vở của con. Cô vào chấm và để lại nhận xét ngắn.
-        </p>
-      </header>
+    <PageContainer>
+      <BackLink href="/teacher/dashboard">Bảng điều khiển</BackLink>
+      <PageHeader
+        className="mt-2"
+        title="Vở học sinh"
+        description="Phụ huynh tải ảnh vở của con. Cô vào chấm và để lại nhận xét ngắn."
+      />
 
-      <h2 className="mb-3 text-lg font-semibold">
-        Chờ chấm{pending.length > 0 ? ` (${pending.length})` : ""}
-      </h2>
-      {pending.length === 0 ? (
-        <p className="text-muted-foreground mb-6 text-sm">Không có vở nào đang chờ.</p>
-      ) : (
-        <ul className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {pending.map((r) => (
-            <li key={r.uploadId} className="bg-card overflow-hidden rounded-xl border shadow-sm">
-              <Link href={`/teacher/uploads/${r.uploadId}`} className="block">
-                {thumbById.get(r.uploadId) ? (
+      <section className="mb-10">
+        <SectionHeader title="Chờ chấm" count={pending.length} />
+        {pending.length === 0 ? (
+          <EmptyState
+            icon="✨"
+            title="Không có vở nào đang chờ"
+            description="Khi phụ huynh tải ảnh vở mới, ảnh sẽ xuất hiện ở đây để cô chấm."
+          />
+        ) : (
+          <UploadGrid items={pending} thumbById={thumbById} showRating={false} />
+        )}
+      </section>
+
+      <section>
+        <SectionHeader title="Đã chấm" count={reviewed.length} />
+        {reviewed.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Chưa chấm vở nào.</p>
+        ) : (
+          <UploadGrid items={reviewed} thumbById={thumbById} showRating />
+        )}
+      </section>
+    </PageContainer>
+  )
+}
+
+function UploadGrid({
+  items,
+  thumbById,
+  showRating,
+}: {
+  items: UploadRow[]
+  thumbById: Map<string, string | null>
+  showRating: boolean
+}) {
+  return (
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {items.map((r) => {
+        const url = thumbById.get(r.uploadId)
+        return (
+          <li
+            key={r.uploadId}
+            className="bg-card hover:border-primary/40 group overflow-hidden rounded-xl border shadow-sm transition-colors"
+          >
+            <Link href={`/teacher/uploads/${r.uploadId}`} className="block">
+              <div className="relative aspect-square w-full bg-gray-100">
+                {url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={thumbById.get(r.uploadId) ?? ""}
-                    alt="vở"
-                    className="aspect-square w-full object-cover"
+                    src={url}
+                    alt={`vở ${r.studentName}`}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
                 ) : (
-                  <div className="bg-muted aspect-square w-full" />
+                  <div className="flex h-full w-full items-center justify-center text-3xl">📝</div>
                 )}
-                <div className="p-2 text-xs">
-                  <p className="font-medium">{r.studentName}</p>
-                  <p className="text-muted-foreground">
-                    {r.className} ·{" "}
-                    {new Intl.DateTimeFormat("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                    }).format(new Date(r.uploadedAt))}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2 className="mb-3 text-lg font-semibold">Đã chấm</h2>
-      {reviewed.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Chưa chấm vở nào.</p>
-      ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {reviewed.map((r) => (
-            <li key={r.uploadId} className="bg-card overflow-hidden rounded-xl border shadow-sm">
-              <Link href={`/teacher/uploads/${r.uploadId}`} className="block">
-                {thumbById.get(r.uploadId) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={thumbById.get(r.uploadId) ?? ""}
-                    alt="vở"
-                    className="aspect-square w-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-muted aspect-square w-full" />
+                {r.imagePaths.length > 1 && (
+                  <span className="absolute top-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    {r.imagePaths.length} ảnh
+                  </span>
                 )}
-                <div className="p-2 text-xs">
-                  <p className="font-medium">{r.studentName}</p>
-                  <p className="text-muted-foreground">
-                    {r.rating === "good" ? "Tốt" : r.rating === "needs_support" ? "Cần hỗ trợ" : ""}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-8">
-        <Link href="/teacher/dashboard" className={buttonVariants({ variant: "ghost" })}>
-          ← Bảng điều khiển
-        </Link>
-      </div>
-    </main>
+              </div>
+              <div className="p-2.5">
+                <p className="truncate text-sm font-medium">{r.studentName}</p>
+                <p className="text-muted-foreground text-xs">
+                  Lớp {r.className} ·{" "}
+                  {new Intl.DateTimeFormat("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  }).format(new Date(r.uploadedAt))}
+                </p>
+                {showRating && r.rating && (
+                  <Badge
+                    variant={r.rating === "good" ? "default" : "secondary"}
+                    className="mt-1.5 text-[10px]"
+                  >
+                    {r.rating === "good" ? "Tốt" : "Cần hỗ trợ"}
+                  </Badge>
+                )}
+              </div>
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
   )
 }

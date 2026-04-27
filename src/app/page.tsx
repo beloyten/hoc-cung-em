@@ -95,7 +95,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="mx-auto w-full max-w-6xl px-6 py-8 text-center text-sm text-slate-500">
         <p>{APP_SLOGAN}</p>
-        <p className="mt-1">Sản phẩm dự thi Sáng tạo KHKT — Lớp 4A1</p>
+        <p className="mt-1">Sản phẩm dự thi Sáng tạo Khoa học Kỹ thuật</p>
       </footer>
     </div>
   )

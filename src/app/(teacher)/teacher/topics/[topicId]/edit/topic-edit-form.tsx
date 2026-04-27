@@ -1,122 +1,114 @@
 "use client"
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { currentWeekDates } from "@/lib/dates"
-import { createTopicAction } from "./actions"
+import { updateTopicAction } from "../../actions"
 
-export function TopicCreateForm({ classId }: { classId: string }) {
+type Initial = {
+  topicId: string
+  title: string
+  weekNumber: number
+  startDate: string
+  endDate: string
+  description: string | null
+  context: string | null
+}
+
+export function TopicEditForm({ initial }: { initial: Initial }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const defaults = useMemo(() => currentWeekDates(), [])
+  const [savedAt, setSavedAt] = useState<string | null>(null)
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
-    fd.set("classId", classId)
-    const form = e.currentTarget
+    fd.set("topicId", initial.topicId)
     start(async () => {
-      const res = await createTopicAction(fd)
+      const res = await updateTopicAction(fd)
       if (!res.ok) {
         setError(res.error.message)
         return
       }
-      form.reset()
+      setSavedAt(new Date().toLocaleTimeString("vi-VN"))
       router.refresh()
     })
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <input type="hidden" name="classId" value={classId} />
-
       <div className="space-y-2">
-        <Label htmlFor={`title-${classId}`} className="text-sm font-medium">
+        <Label htmlFor="title" className="text-sm font-medium">
           Tiêu đề chủ đề <span className="text-red-500">*</span>
         </Label>
-        <Input
-          id={`title-${classId}`}
-          name="title"
-          placeholder="vd: Phép cộng có nhớ trong phạm vi 1000"
-          required
-          maxLength={200}
-        />
+        <Input id="title" name="title" defaultValue={initial.title} required maxLength={200} />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor={`week-${classId}`} className="text-sm font-medium">
+          <Label htmlFor="weekNumber" className="text-sm font-medium">
             Tuần <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`week-${classId}`}
+            id="weekNumber"
             name="weekNumber"
             type="number"
             min={1}
             max={52}
-            defaultValue={defaults.weekNumber}
+            defaultValue={initial.weekNumber}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`start-${classId}`} className="text-sm font-medium">
+          <Label htmlFor="startDate" className="text-sm font-medium">
             Bắt đầu <span className="text-red-500">*</span>
           </Label>
           <Input
-            id={`start-${classId}`}
+            id="startDate"
             name="startDate"
             type="date"
-            defaultValue={defaults.startDate}
+            defaultValue={initial.startDate}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`end-${classId}`} className="text-sm font-medium">
+          <Label htmlFor="endDate" className="text-sm font-medium">
             Kết thúc <span className="text-red-500">*</span>
           </Label>
-          <Input
-            id={`end-${classId}`}
-            name="endDate"
-            type="date"
-            defaultValue={defaults.endDate}
-            required
-          />
+          <Input id="endDate" name="endDate" type="date" defaultValue={initial.endDate} required />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor={`desc-${classId}`} className="text-sm font-medium">
+        <Label htmlFor="description" className="text-sm font-medium">
           Mô tả ngắn <span className="text-muted-foreground font-normal">— phụ huynh sẽ thấy</span>
         </Label>
         <Textarea
-          id={`desc-${classId}`}
+          id="description"
           name="description"
           rows={2}
           maxLength={500}
-          placeholder="vd: Tuần này lớp ôn cộng có nhớ với số 4 chữ số."
+          defaultValue={initial.description ?? ""}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor={`ctx-${classId}`} className="text-sm font-medium">
+        <Label htmlFor="context" className="text-sm font-medium">
           Hướng dẫn cho Cô Mây{" "}
           <span className="text-muted-foreground font-normal">— giúp AI dạy đúng phương pháp</span>
         </Label>
         <Textarea
-          id={`ctx-${classId}`}
+          id="context"
           name="context"
-          rows={4}
+          rows={5}
           maxLength={4000}
-          placeholder="vd: Khuyến khích đặt tính dọc. Khi nhớ, viết số nhớ nhỏ phía trên cột bên trái."
+          defaultValue={initial.context ?? ""}
         />
-        <p className="text-muted-foreground text-xs">
-          Cô Mây sẽ dùng nội dung này khi trò chuyện với học sinh để dạy đúng cách lớp đang học.
-        </p>
       </div>
 
       {error && (
@@ -124,10 +116,14 @@ export function TopicCreateForm({ classId }: { classId: string }) {
           {error}
         </p>
       )}
+      {savedAt && !error && <p className="text-sm text-emerald-700">Đã lưu lúc {savedAt}.</p>}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-between gap-2">
+        <Link href="/teacher/topics" className={buttonVariants({ variant: "ghost" })}>
+          ← Quay lại danh sách
+        </Link>
         <Button type="submit" disabled={pending}>
-          {pending ? "Đang lưu…" : "Lưu chủ đề"}
+          {pending ? "Đang lưu…" : "Lưu thay đổi"}
         </Button>
       </div>
     </form>
