@@ -6,6 +6,19 @@ import { parents, teachers } from "@/db/schema"
 import { err, type Result } from "@/lib/types/result"
 import { requireUser } from "@/server/auth"
 
+// Chuẩn hoá số điện thoại VN sang E.164 (giống login/actions.ts)
+function normalizePhone(raw: string): string | undefined {
+  const trimmed = raw.trim()
+  if (!trimmed) return undefined
+  const digits = trimmed.replace(/\D/g, "")
+  let e164: string
+  if (trimmed.startsWith("+")) e164 = `+${digits}`
+  else if (digits.startsWith("84")) e164 = `+${digits}`
+  else if (digits.startsWith("0")) e164 = `+84${digits.slice(1)}`
+  else e164 = `+84${digits}`
+  return /^\+84[3-9]\d{8}$/.test(e164) ? e164 : undefined
+}
+
 const Input = z.object({
   role: z.enum(["teacher", "parent"]),
   fullName: z.string().trim().min(2).max(100),
@@ -13,6 +26,12 @@ const Input = z.object({
     .string()
     .trim()
     .max(20)
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
+  email: z
+    .string()
+    .trim()
+    .max(200)
     .optional()
     .transform((v) => (v && v.length > 0 ? v : undefined)),
 })
@@ -30,8 +49,26 @@ export async function completeOnboarding(raw: unknown): Promise<Result<never>> {
     return err("UNAUTHENTICATED", "Phiên đăng nhập đã hết hạn")
   }
 
-  const email = user.email
-  if (!email) return err("VALIDATION", "Tài khoản chưa có email")
+  // Ưu tiên thông tin đã xác minh từ Supabase auth.users; field user nhập chỉ bù khi auth chưa có.
+  const verifiedEmail = user.email?.trim() || undefined
+  const verifiedPhone = user.phone ? `+${user.phone.replace(/\D/g, "")}` : undefined
+  const inputPhone = parsed.data.phone ? normalizePhone(parsed.data.phone) : undefined
+  const inputEmail = parsed.data.email
+    ? z.string().email().safeParse(parsed.data.email).data
+    : undefined
+
+  const finalEmail = verifiedEmail ?? inputEmail
+  const finalPhone = verifiedPhone ?? inputPhone
+
+  if (!finalEmail && !finalPhone) {
+    return err("VALIDATION", "Cần ít nhất email hoặc số điện thoại")
+  }
+  if (parsed.data.email && !verifiedEmail && !inputEmail) {
+    return err("VALIDATION", "Email không hợp lệ")
+  }
+  if (parsed.data.phone && !verifiedPhone && !inputPhone) {
+    return err("VALIDATION", "Số điện thoại Việt Nam không hợp lệ")
+  }
 
   try {
     if (parsed.data.role === "teacher") {
@@ -40,7 +77,8 @@ export async function completeOnboarding(raw: unknown): Promise<Result<never>> {
         .values({
           authUserId: user.id,
           fullName: parsed.data.fullName,
-          email,
+          email: finalEmail,
+          phone: finalPhone,
         })
         .onConflictDoNothing()
     } else {
@@ -49,8 +87,8 @@ export async function completeOnboarding(raw: unknown): Promise<Result<never>> {
         .values({
           authUserId: user.id,
           fullName: parsed.data.fullName,
-          email,
-          phone: parsed.data.phone,
+          email: finalEmail,
+          phone: finalPhone,
         })
         .onConflictDoNothing()
     }

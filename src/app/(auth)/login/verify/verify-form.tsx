@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { verifyPhoneOTP, sendPhoneOTP } from "../actions"
 
-export function VerifyOTPForm({ phone }: { phone: string }) {
+export function VerifyOTPForm({ phone, role }: { phone: string; role?: "parent" | "teacher" }) {
   const router = useRouter()
   const [otp, setOtp] = useState("")
   const [pending, setPending] = useState(false)
@@ -25,7 +25,7 @@ export function VerifyOTPForm({ phone }: { phone: string }) {
     e.preventDefault()
     setPending(true)
     setMessage(null)
-    const result = await verifyPhoneOTP(phone, otp)
+    const result = await verifyPhoneOTP(phone, otp, role)
     setPending(false)
     if (result.ok) {
       router.push(result.data.redirectTo)

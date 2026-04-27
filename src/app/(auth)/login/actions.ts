@@ -18,19 +18,26 @@ const PhoneSchema = z
   })
   .refine((p) => /^\+84[3-9]\d{8}$/.test(p), "Số điện thoại Việt Nam không hợp lệ")
 
-export async function sendMagicLink(rawEmail: string): Promise<Result<{ email: string }>> {
+const RoleSchema = z.enum(["parent", "teacher"]).optional()
+
+export async function sendMagicLink(
+  rawEmail: string,
+  rawRole?: string,
+): Promise<Result<{ email: string }>> {
   const parsed = EmailSchema.safeParse(rawEmail)
   if (!parsed.success) {
     return err("VALIDATION", parsed.error.issues[0]?.message ?? "Email không hợp lệ")
   }
+  const role = RoleSchema.safeParse(rawRole).data
 
   const supabase = await createClient()
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const next = role ? `/onboarding?role=${role}` : "/onboarding"
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 
@@ -62,6 +69,7 @@ export async function sendPhoneOTP(rawPhone: string): Promise<Result<{ phone: st
 export async function verifyPhoneOTP(
   rawPhone: string,
   token: string,
+  rawRole?: string,
 ): Promise<Result<{ redirectTo: string }>> {
   const parsedPhone = PhoneSchema.safeParse(rawPhone)
   if (!parsedPhone.success) {
@@ -87,5 +95,6 @@ export async function verifyPhoneOTP(
     return err("AUTH_FAILED", error.message)
   }
 
-  return ok({ redirectTo: "/onboarding" })
+  const role = RoleSchema.safeParse(rawRole).data
+  return ok({ redirectTo: role ? `/onboarding?role=${role}` : "/onboarding" })
 }

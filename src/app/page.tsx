@@ -47,16 +47,16 @@ export default function Home() {
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
-            href={ROUTES.login}
+            href={`${ROUTES.login}?role=parent`}
             className={`${buttonVariants({ size: "lg" })} bg-sky-600 px-8 hover:bg-sky-700`}
           >
-            Bắt đầu học
+            Phụ huynh / Học sinh
           </Link>
           <Link
-            href={ROUTES.parent.home}
+            href={`${ROUTES.login}?role=teacher`}
             className={`${buttonVariants({ variant: "outline", size: "lg" })} px-8`}
           >
-            Dành cho phụ huynh
+            Giáo viên
           </Link>
         </div>
 

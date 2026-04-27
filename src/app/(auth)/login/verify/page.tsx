@@ -12,10 +12,11 @@ export const metadata: Metadata = {
 export default async function VerifyOTPPage({
   searchParams,
 }: {
-  searchParams: Promise<{ phone?: string }>
+  searchParams: Promise<{ phone?: string; role?: string }>
 }) {
-  const { phone } = await searchParams
+  const { phone, role: rawRole } = await searchParams
   if (!phone) redirect("/login")
+  const role = rawRole === "parent" || rawRole === "teacher" ? rawRole : undefined
 
   return (
     <main className="container mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-4 py-8">
@@ -37,7 +38,7 @@ export default async function VerifyOTPPage({
           Mã OTP 6 chữ số đã được gửi qua SMS đến số{" "}
           <span className="text-foreground font-medium">{phone}</span>.
         </p>
-        <VerifyOTPForm phone={phone} />
+        <VerifyOTPForm phone={phone} role={role} />
       </div>
 
       <Link

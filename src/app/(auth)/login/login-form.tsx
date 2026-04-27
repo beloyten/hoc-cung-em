@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label"
 import { sendMagicLink, sendPhoneOTP } from "./actions"
 
 type Tab = "phone" | "email"
+type Role = "parent" | "teacher"
 
-export function LoginForm() {
+export function LoginForm({ role }: { role?: Role }) {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>("phone")
+  // Giáo viên: ưu tiên email; phụ huynh: ưu tiên số điện thoại
+  const [tab, setTab] = useState<Tab>(role === "teacher" ? "email" : "phone")
+  const roleQuery = role ? `&role=${role}` : ""
 
   // Phone state
   const [phone, setPhone] = useState("")
@@ -30,7 +33,7 @@ export function LoginForm() {
     setPhonePending(false)
     if (result.ok) {
       // Chuyển sang trang nhập OTP, truyền số điện thoại qua URL
-      router.push(`/login/verify?phone=${encodeURIComponent(phone)}`)
+      router.push(`/login/verify?phone=${encodeURIComponent(phone)}${roleQuery}`)
     } else {
       const msg = result.error.message.toLowerCase()
       const friendly =
@@ -47,7 +50,7 @@ export function LoginForm() {
     e.preventDefault()
     setEmailPending(true)
     setEmailMsg(null)
-    const result = await sendMagicLink(email)
+    const result = await sendMagicLink(email, role)
     setEmailPending(false)
     if (result.ok) {
       setEmailMsg({
