@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { sendMagicLink, sendPhoneOTP } from "./actions"
+import { sendEmailOTP, sendPhoneOTP } from "./actions"
 
 type Tab = "phone" | "email"
 type Role = "parent" | "teacher"
@@ -50,16 +50,14 @@ export function LoginForm({ role }: { role?: Role }) {
     e.preventDefault()
     setEmailPending(true)
     setEmailMsg(null)
-    const result = await sendMagicLink(email, role)
+    const result = await sendEmailOTP(email, role)
     setEmailPending(false)
     if (result.ok) {
-      setEmailMsg({
-        type: "ok",
-        text: 'Đã gửi link đăng nhập đến email. Kiểm tra cả mục Spam / Thư rác, đánh dấu "Không phải spam" nếu thấy ở đó.',
-      })
+      // Chuyển sang trang nhập OTP email — tránh cross-browser (Gmail in-app browser)
+      router.push(`/login/verify?email=${encodeURIComponent(email)}${roleQuery}`)
     } else {
-      const friendly = result.error.message.includes("rate limit")
-        ? "Bạn vừa yêu cầu quá nhiều link. Vui lòng chờ vài phút rồi thử lại."
+      const friendly = result.error.message.toLowerCase().includes("rate limit")
+        ? "Bạn vừa yêu cầu quá nhiều lần. Vui lòng chờ vài phút rồi thử lại."
         : result.error.message
       setEmailMsg({ type: "err", text: friendly })
     }
@@ -150,7 +148,7 @@ export function LoginForm({ role }: { role?: Role }) {
             />
           </div>
           <Button type="submit" disabled={emailPending || !email} className="w-full">
-            {emailPending ? "Đang gửi..." : "Gửi link đăng nhập"}
+            {emailPending ? "Đang gửi..." : "Gửi mã OTP qua email"}
           </Button>
           {emailMsg && (
             <p

@@ -12,11 +12,13 @@ export const metadata: Metadata = {
 export default async function VerifyOTPPage({
   searchParams,
 }: {
-  searchParams: Promise<{ phone?: string; role?: string }>
+  searchParams: Promise<{ phone?: string; email?: string; role?: string }>
 }) {
-  const { phone, role: rawRole } = await searchParams
-  if (!phone) redirect("/login")
+  const { phone, email, role: rawRole } = await searchParams
+  if (!phone && !email) redirect("/login")
   const role = rawRole === "parent" || rawRole === "teacher" ? rawRole : undefined
+  const mode = phone ? "phone" : "email"
+  const identifier = (phone ?? email)!
 
   return (
     <main className="container mx-auto flex min-h-svh max-w-md flex-col items-center justify-center px-4 py-8">
@@ -35,17 +37,27 @@ export default async function VerifyOTPPage({
       <div className="bg-card w-full rounded-2xl border p-6 shadow-sm">
         <h1 className="mb-1 text-xl font-semibold">Nhập mã xác nhận</h1>
         <p className="text-muted-foreground mb-6 text-sm">
-          Mã OTP 6 chữ số đã được gửi qua SMS đến số{" "}
-          <span className="text-foreground font-medium">{phone}</span>.
+          {mode === "phone" ? (
+            <>
+              Mã OTP 6 chữ số đã được gửi qua SMS đến số{" "}
+              <span className="text-foreground font-medium">{identifier}</span>.
+            </>
+          ) : (
+            <>
+              Mã OTP 6 chữ số đã được gửi đến email{" "}
+              <span className="text-foreground font-medium">{identifier}</span>. Kiểm tra cả mục
+              Spam.
+            </>
+          )}
         </p>
-        <VerifyOTPForm phone={phone} role={role} />
+        <VerifyOTPForm identifier={identifier} mode={mode} role={role} />
       </div>
 
       <Link
         href="/login"
         className="text-muted-foreground mt-6 text-center text-xs underline-offset-4 hover:underline"
       >
-        Đổi số điện thoại
+        {mode === "phone" ? "Đổi số điện thoại" : "Đổi email"}
       </Link>
     </main>
   )

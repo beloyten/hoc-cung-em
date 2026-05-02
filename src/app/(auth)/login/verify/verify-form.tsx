@@ -3,9 +3,19 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { verifyPhoneOTP, sendPhoneOTP } from "../actions"
+import { verifyPhoneOTP, sendPhoneOTP, verifyEmailOTP, sendEmailOTP } from "../actions"
 
-export function VerifyOTPForm({ phone, role }: { phone: string; role?: "parent" | "teacher" }) {
+type Mode = "phone" | "email"
+
+export function VerifyOTPForm({
+  identifier,
+  mode,
+  role,
+}: {
+  identifier: string
+  mode: Mode
+  role?: "parent" | "teacher"
+}) {
   const router = useRouter()
   const [otp, setOtp] = useState("")
   const [pending, setPending] = useState(false)
@@ -25,7 +35,10 @@ export function VerifyOTPForm({ phone, role }: { phone: string; role?: "parent" 
     e.preventDefault()
     setPending(true)
     setMessage(null)
-    const result = await verifyPhoneOTP(phone, otp, role)
+    const result =
+      mode === "phone"
+        ? await verifyPhoneOTP(identifier, otp, role)
+        : await verifyEmailOTP(identifier, otp, role)
     setPending(false)
     if (result.ok) {
       router.push(result.data.redirectTo)
@@ -44,7 +57,11 @@ export function VerifyOTPForm({ phone, role }: { phone: string; role?: "parent" 
   async function onResend() {
     setResendCooldown(60)
     setMessage(null)
-    await sendPhoneOTP(phone)
+    if (mode === "phone") {
+      await sendPhoneOTP(identifier)
+    } else {
+      await sendEmailOTP(identifier, role)
+    }
     setMessage({ type: "ok", text: "Đã gửi lại mã OTP." })
   }
 

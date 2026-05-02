@@ -20,7 +20,8 @@ const PhoneSchema = z
 
 const RoleSchema = z.enum(["parent", "teacher"]).optional()
 
-export async function sendMagicLink(
+// Gửi OTP 6 chữ số qua email — KHÔNG dùng magic link để tránh cross-browser (Gmail in-app browser)
+export async function sendEmailOTP(
   rawEmail: string,
   rawRole?: string,
 ): Promise<Result<{ email: string }>> {
@@ -28,17 +29,12 @@ export async function sendMagicLink(
   if (!parsed.success) {
     return err("VALIDATION", parsed.error.issues[0]?.message ?? "Email không hợp lệ")
   }
-  const role = RoleSchema.safeParse(rawRole).data
 
   const supabase = await createClient()
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-  const next = role ? `/onboarding?role=${role}` : "/onboarding"
-
+  // shouldCreateUser: true (default) → tạo user mới nếu chưa có
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-    },
+    options: { shouldCreateUser: true },
   })
 
   if (error) {
@@ -46,6 +42,90 @@ export async function sendMagicLink(
   }
 
   return ok({ email: parsed.data })
+}
+
+export async function verifyEmailOTP(
+  rawEmail: string,
+  token: string,
+  rawRole?: string,
+): Promise<Result<{ redirectTo: string }>> {
+  const parsedEmail = EmailSchema.safeParse(rawEmail)
+  if (!parsedEmail.success) {
+    return err("VALIDATION", "Email không hợp lệ")
+  }
+
+  const parsedToken = z
+    .string()
+    .regex(/^\d{6}$/, "Mã OTP gồm 6 chữ số")
+    .safeParse(token.trim())
+  if (!parsedToken.success) {
+    return err("VALIDATION", parsedToken.error.issues[0]?.message ?? "Mã OTP không hợp lệ")
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsedEmail.data,
+    token: parsedToken.data,
+    type: "email",
+  })
+
+  if (error) {
+    return err("AUTH_FAILED", error.message)
+  }
+
+  const role = RoleSchema.safeParse(rawRole).data
+  return ok({ redirectTo: role ? `/onboarding?role=${role}` : "/onboarding" })
+}
+
+export async function sendPhoneOTP(rawPhone: string): Promise<Result<{ phone: string }>> {
+  const parsed = PhoneSchema.safeParse(rawPhone)
+  if (!parsed.success) {
+    return err("VALIDATION", parsed.error.issues[0]?.message ?? "Số điện thoại không hợp lệ")
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.signInWithOtp({
+    phone: parsed.data,
+  })
+
+  if (error) {
+    return err("AUTH_FAILED", error.message)
+  }
+
+  return ok({ phone: parsed.data })
+}
+
+export async function verifyPhoneOTP(
+  rawPhone: string,
+  token: string,
+  rawRole?: string,
+): Promise<Result<{ redirectTo: string }>> {
+  const parsedPhone = PhoneSchema.safeParse(rawPhone)
+  if (!parsedPhone.success) {
+    return err("VALIDATION", "Số điện thoại không hợp lệ")
+  }
+
+  const parsedToken = z
+    .string()
+    .regex(/^\d{6}$/, "Mã OTP gồm 6 chữ số")
+    .safeParse(token.trim())
+  if (!parsedToken.success) {
+    return err("VALIDATION", parsedToken.error.issues[0]?.message ?? "Mã OTP không hợp lệ")
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.verifyOtp({
+    phone: parsedPhone.data,
+    token: parsedToken.data,
+    type: "sms",
+  })
+
+  if (error) {
+    return err("AUTH_FAILED", error.message)
+  }
+
+  const role = RoleSchema.safeParse(rawRole).data
+  return ok({ redirectTo: role ? `/onboarding?role=${role}` : "/onboarding" })
 }
 
 export async function sendPhoneOTP(rawPhone: string): Promise<Result<{ phone: string }>> {
