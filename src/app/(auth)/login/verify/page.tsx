@@ -44,7 +44,7 @@ export default async function VerifyOTPPage({
             </>
           ) : (
             <>
-              Mã OTP 6 chữ số đã được gửi đến email{" "}
+              Mã xác nhận đã được gửi đến email{" "}
               <span className="text-foreground font-medium">{identifier}</span>. Kiểm tra cả mục
               Spam.
             </>

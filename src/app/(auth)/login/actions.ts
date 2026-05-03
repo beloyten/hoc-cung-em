@@ -56,7 +56,7 @@ export async function verifyEmailOTP(
 
   const parsedToken = z
     .string()
-    .regex(/^\d{6}$/, "Mã OTP gồm 6 chữ số")
+    .regex(/^\d{6,8}$/, "Mã OTP không hợp lệ")
     .safeParse(token.trim())
   if (!parsedToken.success) {
     return err("VALIDATION", parsedToken.error.issues[0]?.message ?? "Mã OTP không hợp lệ")

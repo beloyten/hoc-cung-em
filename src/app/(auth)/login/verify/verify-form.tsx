@@ -73,18 +73,22 @@ export function VerifyOTPForm({
         name="otp"
         type="text"
         inputMode="numeric"
-        pattern="\d{6}"
-        maxLength={6}
+        pattern="\d{6,8}"
+        maxLength={8}
         required
         autoComplete="one-time-code"
-        placeholder="Nhập 6 chữ số"
+        placeholder={mode === "phone" ? "Nhập 6 chữ số" : "Nhập mã xác nhận"}
         value={otp}
         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
         disabled={pending}
         className="text-center text-2xl tracking-[0.5em]"
       />
 
-      <Button type="submit" disabled={pending || otp.length !== 6} className="w-full">
+      <Button
+        type="submit"
+        disabled={pending || (mode === "phone" ? otp.length !== 6 : otp.length < 6)}
+        className="w-full"
+      >
         {pending ? "Đang xác nhận..." : "Xác nhận"}
       </Button>
 
