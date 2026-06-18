@@ -81,6 +81,7 @@
 | 4   | `server-only` trong tsx script — inline createClient cho seed    | 26/04 | ✅ fixed |
 | 5   | Tailwind v4: `bg-gradient-to-b` → `bg-linear-to-b`               | 26/04 | ✅ fixed |
 | 6   | A11y: `<select>`/`<input file>` thiếu label                      | 26/04 | ✅ fixed |
+| 7   | signout không clear cookie trên browser → không vào /login được  | 18/06 | ✅ fixed |
 
 ---
 
