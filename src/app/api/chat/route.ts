@@ -1,6 +1,6 @@
 // src/app/api/chat/route.ts
 // POST /api/chat — stream phản hồi từ Cô Mây và lưu lịch sử tin nhắn.
-import { streamText, type CoreMessage, type UIMessage } from "ai"
+import { streamText, type UIMessage } from "ai"
 import { z } from "zod"
 import { db } from "@/db"
 import { aiChats, aiMessages } from "@/db/schema"
@@ -108,8 +108,10 @@ function extractText(msg: UIMessage): string {
 // Tự convert UIMessage[] → CoreMessage[] thay vì dùng convertToModelMessages,
 // vì SDK có thể thêm các part nội bộ (step-start, v.v.) vào streamed messages
 // khiến convertToModelMessages crash ở turn thứ 2 trở đi.
-function toCoreMessages(messages: UIMessage[]): CoreMessage[] {
-  const result: CoreMessage[] = []
+type ChatMessage = { role: "user"; content: string } | { role: "assistant"; content: string }
+
+function toCoreMessages(messages: UIMessage[]): ChatMessage[] {
+  const result: ChatMessage[] = []
   for (const m of messages) {
     const text = extractText(m)
     if (!text) continue
