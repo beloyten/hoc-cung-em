@@ -3,9 +3,12 @@
 
 const FORBIDDEN_PATTERNS: Array<{ regex: RegExp; reason: string }> = [
   { regex: /đáp\s*(số|án)\s*(là|=|:)/i, reason: "direct_answer" },
-  { regex: /=\s*\d+\s*[.\n]/, reason: "computed_result" },
+  // Negative lookbehind (?<!\d\s*): không block arithmetic scaffolds như "7 + 5 = 12."
+  { regex: /(?<!\d\s*)=\s*\d+\s*[.\n]/, reason: "computed_result" },
   { regex: /bài\s*tập\s*về\s*nhà|btvn|bài\s*về\s*nhà/i, reason: "btvn_term" },
-  { regex: /^.{0,30}=\s*\d+/m, reason: "leading_equation" },
+  // Chỉ block khi "= số [đơn vị]" đứng cuối dòng — không block formula như "= 4 × cạnh"
+  // hay câu hỏi Socrates như "cạnh = 5 thì chu vi là gì?"
+  { regex: /^.{0,20}=\s*\d+(?:\.\d+)?(?:\s*(?:cm²?|m²?|km|mm|dm|kg|g|ml?|l|ha))?\s*$/im, reason: "leading_equation" },
 ]
 
 export type GuardResult =
