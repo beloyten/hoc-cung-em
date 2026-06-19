@@ -175,13 +175,13 @@ export default function Home() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href={`${ROUTES.login}?role=parent`}
-                className={`${buttonVariants({ size: "lg" })} bg-white px-8 text-base text-sky-700 transition-transform duration-150 hover:bg-sky-50 active:scale-[0.97]`}
+                className={`${buttonVariants({ size: "lg" })} bg-white px-8 text-base text-sky-700 transition-all duration-150 hover:bg-sky-900 hover:text-white active:scale-[0.97]`}
               >
                 Phụ huynh — Đăng ký ngay
               </Link>
               <Link
                 href={`${ROUTES.login}?role=teacher`}
-                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white bg-transparent px-8 text-base text-white transition-transform duration-150 hover:bg-sky-700 active:scale-[0.97]`}
+                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white bg-transparent px-8 text-base text-white transition-all duration-150 hover:border-sky-900 hover:bg-white hover:text-sky-700 active:scale-[0.97]`}
               >
                 Giáo viên — Tạo lớp học
               </Link>
