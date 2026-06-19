@@ -2,7 +2,7 @@
 
 > Update mỗi cuối ngày. Format: ✅ done | 🟡 partial | ❌ not started | ⏭️ skipped
 
-**Cập nhật lần cuối:** 26/04/2026
+**Cập nhật lần cuối:** 19/06/2026
 
 ---
 
@@ -56,7 +56,9 @@
 | Student management             | AI    | ✅     | seed 5 hs cho 4A1              |
 | Topic CRUD                     | AI    | ✅     | feeds Cô Mây context           |
 | Parent linking                 | AI    | ✅     | teacher verify                 |
-| Chat Cô Mây                    | AI    | ✅     | gemini-2.0-flash, AI SDK v6    |
+| Chat Cô Mây                    | AI    | ✅     | gemini-2.5-flash, AI SDK v6    |
+| System prompt v2.0             | AI    | ✅     | few-shot examples, tighter rules |
+| Rate limiting                  | AI    | ✅     | 30 msg/hr/parent, 429 + UI lock  |
 | AI Guard                       | AI    | ✅     | passed/retried/fallback badges |
 | Upload notebook                | AI    | ✅     | 6 ảnh, 10MB, signed URL 30′    |
 | Vision (ảnh đề bài trong chat) | AI    | ⏭️     | post-MVP                       |
@@ -66,8 +68,8 @@
 | Weekly report cron             | AI    | ✅     | Sun 23:00 UTC                  |
 | Email (Resend)                 | AI    | ✅     | HTML+text, vi-VN               |
 | PWA (Serwist)                  | AI    | ✅     | manifest + install prompt      |
-| Landing page                   | AI    | 🟡     | basic, cần polish              |
-| Privacy page                   | AI    | ❌     |                                |
+| Landing page                   | AI    | ✅     | polished — banner, chat demo, 3 roles |
+| Privacy page                   | AI    | ✅     | /privacy, linked từ footer     |
 
 ---
 
@@ -82,6 +84,7 @@
 | 5   | Tailwind v4: `bg-gradient-to-b` → `bg-linear-to-b`               | 26/04 | ✅ fixed |
 | 6   | A11y: `<select>`/`<input file>` thiếu label                      | 26/04 | ✅ fixed |
 | 7   | signout không clear cookie trên browser → không vào /login được  | 18/06 | ✅ fixed |
+| 8   | 2nd AI message crash — debug logging + try/catch quanh streamText | 19/06 | 🟡 logging added, chờ reproduce |
 
 ---
 

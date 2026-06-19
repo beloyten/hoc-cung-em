@@ -78,6 +78,7 @@ export async function startStudySession(
 export interface ChatContextData {
   chatId: string
   sessionId: string
+  parentId: string
   studentName: string
   topicTitle?: string
   topicContext?: string
@@ -114,6 +115,7 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
   return ok({
     chatId: row.chatId,
     sessionId: row.sessionId,
+    parentId: parent.id,
     studentName: row.studentName,
     topicTitle: row.topicTitle ?? undefined,
     topicContext: row.topicContext ?? undefined,

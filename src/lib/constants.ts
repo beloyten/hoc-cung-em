@@ -6,6 +6,7 @@ export const AI_PERSONA_NAME = "Cô Mây"
 export const ROUTES = {
   home: "/",
   login: "/login",
+  privacy: "/privacy",
   teacher: {
     dashboard: "/teacher/dashboard",
     insights: "/teacher/insights",

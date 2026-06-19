@@ -16,8 +16,41 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [isRateLimited, setIsRateLimited] = useState(false)
+
+  // Auto-clear rate limit flag after 1 min so user can retry without a page refresh.
+  useEffect(() => {
+    if (!isRateLimited) return
+    const id = setTimeout(() => setIsRateLimited(false), 60_000)
+    return () => clearTimeout(id)
+  }, [isRateLimited])
+
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", body: { chatId } }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { chatId },
+        fetch: async (url, init) => {
+          try {
+            const res = await fetch(url, init as RequestInit)
+            if (!res.ok) {
+              // Read body directly — on error paths the SDK doesn't consume it.
+              const json = await res.json().catch(() => null)
+              setIsRateLimited(res.status === 429)
+              setServerError(json?.error ?? "Có lỗi xảy ra. Con thử gửi lại nhé.")
+            } else {
+              setIsRateLimited(false)
+              setServerError(null)
+            }
+            return res
+          } catch (e) {
+            setIsRateLimited(false)
+            setServerError("Không thể kết nối. Con thử gửi lại nhé.")
+            throw e
+          }
+        },
+      }),
     [chatId],
   )
 
@@ -47,6 +80,9 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
     setInput("")
   }
 
+  // serverError covers HTTP-level failures; error covers mid-stream SDK failures.
+  const displayError = serverError ?? (error ? "Có lỗi xảy ra. Con thử gửi lại nhé." : null)
+
   return (
     <>
       <div
@@ -64,7 +100,7 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
         {isStreaming && messages.at(-1)?.role !== "assistant" && (
           <p className="text-muted-foreground text-xs italic">{AI_PERSONA_NAME} đang nghĩ...</p>
         )}
-        {error && <p className="text-destructive text-xs">Có lỗi xảy ra. Con thử gửi lại nhé.</p>}
+        {displayError && <p className="text-destructive text-xs">{displayError}</p>}
       </div>
 
       <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
@@ -80,9 +116,9 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
               handleSubmit(e)
             }
           }}
-          disabled={isStreaming}
+          disabled={isStreaming || isRateLimited}
         />
-        <Button type="submit" disabled={isStreaming || !input.trim()}>
+        <Button type="submit" disabled={isStreaming || isRateLimited || !input.trim()}>
           Gửi
         </Button>
       </form>

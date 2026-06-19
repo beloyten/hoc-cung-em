@@ -1,5 +1,3 @@
-// src/app/api/chat/route.ts
-// POST /api/chat — stream phản hồi từ Cô Mây và lưu lịch sử tin nhắn.
 import { streamText, type UIMessage } from "ai"
 import { z } from "zod"
 import { db } from "@/db"
@@ -9,7 +7,7 @@ import { FLASH, google } from "@/server/ai/client"
 import { aiGuard, FALLBACK_RESPONSE } from "@/server/ai/guard"
 import { systemPromptV1 } from "@/server/ai/prompts"
 import { loadChatForParent } from "@/server/ai/sessions"
-import { eq, sql } from "drizzle-orm"
+import { and, count, eq, gt, sql } from "drizzle-orm"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -18,6 +16,12 @@ const bodySchema = z.object({
   chatId: z.string().uuid(),
   messages: z.array(z.unknown()),
 })
+
+// Fallback to 30 if env var is unset or non-numeric.
+const MAX_MSG_PER_HOUR = (() => {
+  const n = parseInt(process.env.AI_MAX_MESSAGES_PER_HOUR ?? "30", 10)
+  return Number.isFinite(n) && n > 0 ? n : 30
+})()
 
 export async function POST(req: Request) {
   let parsed: z.infer<typeof bodySchema>
@@ -42,58 +46,94 @@ export async function POST(req: Request) {
   }
 
   const messages = parsed.messages as UIMessage[]
-  const lastUser = [...messages].reverse().find((m) => m.role === "user")
+  const lastUser = messages.findLast((m) => m.role === "user")
   const lastUserText = lastUser ? extractText(lastUser) : ""
 
-  // Lưu tin nhắn người dùng trước khi stream.
-  if (lastUserText) {
-    await db.insert(aiMessages).values({
-      chatId: chatCtx.chatId,
-      role: "user",
-      content: lastUserText,
+  console.log("[chat:POST] uiMessages=%d lastRole=%s", messages.length, messages.at(-1)?.role)
+
+  // insertedMsgId declared here so the catch can clean up on any error below.
+  let insertedMsgId: string | undefined
+
+  try {
+    // Rate limit: count user messages in the last hour across all chats for this parent.
+    const [rateRow] = await db
+      .select({ total: count() })
+      .from(aiMessages)
+      .innerJoin(aiChats, eq(aiChats.id, aiMessages.chatId))
+      .where(
+        and(
+          eq(aiChats.createdByParentId, chatCtx.parentId),
+          eq(aiMessages.role, "user"),
+          gt(aiMessages.createdAt, sql`NOW() - INTERVAL '1 hour'`),
+        ),
+      )
+    if ((rateRow?.total ?? 0) >= MAX_MSG_PER_HOUR) {
+      return Response.json(
+        { error: `Bạn đã gửi ${MAX_MSG_PER_HOUR} tin nhắn trong giờ qua. Vui lòng thử lại sau.` },
+        { status: 429 },
+      )
+    }
+
+    // Insert user message before streaming so it persists even if client disconnects mid-stream.
+    if (lastUserText) {
+      const [row] = await db
+        .insert(aiMessages)
+        .values({ chatId: chatCtx.chatId, role: "user", content: lastUserText })
+        .returning({ id: aiMessages.id })
+      insertedMsgId = row?.id
+    }
+
+    const startedAt = Date.now()
+    const system = systemPromptV1({
+      studentName: chatCtx.studentName,
+      topicTitle: chatCtx.topicTitle,
+      topicContext: chatCtx.topicContext,
     })
-  }
 
-  const startedAt = Date.now()
-  const system = systemPromptV1({
-    studentName: chatCtx.studentName,
-    topicTitle: chatCtx.topicTitle,
-    topicContext: chatCtx.topicContext,
-  })
-
-  const result = streamText({
-    model: google(FLASH),
-    system,
-    messages: toCoreMessages(messages),
-    onFinish: async (event) => {
-      const guard = aiGuard(event.text)
-      const finalText = guard.status === "passed" ? event.text : FALLBACK_RESPONSE
-      const guardStatus = guard.status === "passed" ? "passed" : "fallback"
-
-      try {
-        await db.insert(aiMessages).values({
-          chatId: chatCtx.chatId,
-          role: "assistant",
-          content: finalText,
-          guardStatus,
-        })
-
-        const totalTokens = event.totalUsage?.totalTokens ?? 0
-        const durationMs = Date.now() - startedAt
-        await db
-          .update(aiChats)
-          .set({
-            totalTokens: sql`${aiChats.totalTokens} + ${totalTokens}`,
-            durationMs,
+    const result = streamText({
+      model: google(FLASH),
+      system,
+      messages: toCoreMessages(messages),
+      onError: ({ error }) => {
+        console.error("[chat:streamText] stream error", error)
+      },
+      onFinish: async (event) => {
+        const passed = aiGuard(event.text).status === "passed"
+        const finalText = passed ? event.text : FALLBACK_RESPONSE
+        try {
+          await db.insert(aiMessages).values({
+            chatId: chatCtx.chatId,
+            role: "assistant",
+            content: finalText,
+            guardStatus: passed ? "passed" : "fallback",
           })
-          .where(eq(aiChats.id, chatCtx.chatId))
-      } catch (e) {
-        console.error("[chat:onFinish] persistence error", e)
-      }
-    },
-  })
+          const totalTokens = event.totalUsage?.totalTokens ?? 0
+          await db
+            .update(aiChats)
+            .set({
+              totalTokens: sql`${aiChats.totalTokens} + ${totalTokens}`,
+              durationMs: Date.now() - startedAt,
+            })
+            .where(eq(aiChats.id, chatCtx.chatId))
+        } catch (e) {
+          console.error("[chat:onFinish] persistence error", e)
+        }
+      },
+    })
 
-  return result.toUIMessageStreamResponse()
+    // consumeStream ensures onFinish fires even if the client disconnects mid-stream.
+    result.consumeStream()
+    return result.toUIMessageStreamResponse()
+  } catch (e) {
+    console.error("[chat:POST] error", e)
+    if (insertedMsgId) {
+      await db
+        .delete(aiMessages)
+        .where(eq(aiMessages.id, insertedMsgId))
+        .catch((de) => console.error("[chat:POST] orphan cleanup failed", de))
+    }
+    return Response.json({ error: "Có lỗi xảy ra, xin vui lòng thử lại." }, { status: 500 })
+  }
 }
 
 function extractText(msg: UIMessage): string {
@@ -105,9 +145,8 @@ function extractText(msg: UIMessage): string {
     .trim()
 }
 
-// Tự convert UIMessage[] → CoreMessage[] thay vì dùng convertToModelMessages,
-// vì SDK có thể thêm các part nội bộ (step-start, v.v.) vào streamed messages
-// khiến convertToModelMessages crash ở turn thứ 2 trở đi.
+// SDK may attach internal parts (step-start etc.) to streamed UIMessages;
+// toCoreMessages strips those to avoid crash on turn 2+.
 type ChatMessage = { role: "user"; content: string } | { role: "assistant"; content: string }
 
 function toCoreMessages(messages: UIMessage[]): ChatMessage[] {
