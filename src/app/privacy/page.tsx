@@ -126,10 +126,10 @@ export default function PrivacyPage() {
             <p>
               Mọi thắc mắc về quyền riêng tư, vui lòng liên hệ qua email:{" "}
               <a
-                href="mailto:lienhe@hoccungem.shop"
+                href="mailto:hoccungemvn@gmail.com"
                 className="text-sky-600 underline underline-offset-4 hover:text-sky-700"
               >
-                lienhe@hoccungem.shop
+                hoccungemvn@gmail.com
               </a>
             </p>
           </Section>

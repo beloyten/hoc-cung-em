@@ -43,7 +43,10 @@ export default async function LoginPage({
           <p className="text-muted-foreground mb-6 text-sm">
             Bạn đăng nhập với vai trò{" "}
             <span className="text-foreground font-medium">{ROLE_LABELS[role]}</span>.{" "}
-            <Link href="/login" className="underline underline-offset-2">
+            <Link
+              href={`/login?role=${role === "parent" ? "teacher" : "parent"}`}
+              className="underline underline-offset-2"
+            >
               Đổi vai trò
             </Link>
           </p>

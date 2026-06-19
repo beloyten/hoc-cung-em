@@ -16,6 +16,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed-templates": "tsx src/db/seed-templates.ts",
     "db:rls": "tsx src/db/apply-rls.ts",
     "storage:setup": "tsx scripts/setup-storage.ts",
     "prepare": "husky"

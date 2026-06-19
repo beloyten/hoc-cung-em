@@ -13,11 +13,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
-      {/* Achievement banner */}
-      <div className="bg-sky-600 px-4 py-2 text-center text-sm font-medium text-white">
-        🏆 Giải Nhất cấp Xã · Đại diện dự thi Sáng tạo Khoa học Kỹ thuật cấp Tỉnh 2026
-      </div>
-
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
@@ -214,7 +209,7 @@ export default function Home() {
               </Link>
               <Link
                 href={`${ROUTES.login}?role=teacher`}
-                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white px-8 text-base text-white hover:bg-sky-700`}
+                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white bg-transparent px-8 text-base text-white hover:bg-sky-700`}
               >
                 Giáo viên — Tạo lớp học
               </Link>
@@ -240,7 +235,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-col gap-1 text-xs sm:text-right">
-            <p>Sản phẩm dự thi Sáng tạo Khoa học Kỹ thuật cấp Tỉnh 2026</p>
             <Link href={ROUTES.privacy} className="hover:text-white underline underline-offset-4">
               Chính sách bảo mật
             </Link>

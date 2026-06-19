@@ -1,8 +1,41 @@
 # Progress Tracker — HocCungEm
 
-> Update mỗi cuối ngày. Format: ✅ done | 🟡 partial | ❌ not started | ⏭️ skipped
+> Lịch sử sprint thi đấu (kết thúc 04/05/2026). Roadmap tiếp theo xem [ROADMAP.md](ROADMAP.md).
 
 **Cập nhật lần cuối:** 19/06/2026
+
+---
+
+## Phase 1 — Topic Library (đang làm)
+
+### Đã làm (19/06/2026)
+
+- ✅ Bug fix: "Đổi vai trò" trên login page bị link sai (`/login` thay vì `/login?role=teacher`)
+- ✅ `src/db/schema/topic-templates.ts` — schema mới, reuse `subjectEnum` từ study-topics
+- ✅ `src/db/schema/index.ts` — export topic-templates
+- ✅ `src/db/seed-templates.ts` — 15 Grade 4 Math templates với context đầy đủ
+- ✅ `package.json` — thêm script `db:seed-templates`
+- ✅ `src/db/rls-policies.sql` — thêm policy cho `topic_templates` (SELECT cho authenticated)
+- ✅ Docs: ROADMAP.md v3.0, PROGRESS.md
+
+### Còn lại — cần làm khi có node_modules hoạt động
+
+```bash
+# 1. Generate migration từ schema mới
+pnpm db:generate
+# (nếu trên network drive cần: node node_modules/drizzle-kit/bin.cjs generate)
+
+# 2. Apply migration lên Supabase
+pnpm db:migrate
+
+# 3. Apply RLS policy mới cho topic_templates
+pnpm db:rls
+
+# 4. Seed 15 templates
+pnpm db:seed-templates
+```
+
+Sau đó: Phase 1 tiếp tục với UI (API route + tab "Thư viện mẫu" trong teacher dashboard).
 
 ---
 

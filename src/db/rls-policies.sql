@@ -145,3 +145,8 @@ CREATE POLICY "reports_select_teacher" ON weekly_reports FOR SELECT TO authentic
 -- ===== 15. audit_logs =====
 -- Service role only — no policy = deny by default
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- ===== 16. topic_templates =====
+-- Read-only cho tất cả authenticated users. Write chỉ qua service role (seed/migration).
+ALTER TABLE topic_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "topic_templates_select" ON topic_templates FOR SELECT TO authenticated USING (true);
