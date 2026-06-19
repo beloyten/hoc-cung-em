@@ -2,12 +2,13 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { AnimatedChatDemo } from "@/components/shared/animated-chat-demo"
 import { AI_PERSONA_NAME, APP_NAME, APP_SLOGAN, ROUTES } from "@/lib/constants"
 
 export const metadata: Metadata = {
   title: "HocCungEm — AI học cùng em",
   description:
-    "Trợ giảng Toán lớp 4 cùng Cô Mây — phương pháp Socratic, giúp học sinh tự tìm ra đáp án thay vì cho sẵn lời giải.",
+    "Trợ giảng AI cho học sinh tiểu học lớp 1–5 cùng Cô Mây — phương pháp Socratic, giúp học sinh tự tìm ra đáp án thay vì cho sẵn lời giải.",
 }
 
 export default function Home() {
@@ -28,7 +29,10 @@ export default function Home() {
             <span className="text-base font-bold tracking-tight text-slate-900">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href={`${ROUTES.login}?role=teacher`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            <Link
+              href={`${ROUTES.login}?role=teacher`}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
               Giáo viên
             </Link>
             <Link href={`${ROUTES.login}?role=parent`} className={buttonVariants({ size: "sm" })}>
@@ -43,7 +47,7 @@ export default function Home() {
         <section className="bg-linear-to-b from-sky-50 to-white px-6 py-20 text-center">
           <div className="mx-auto max-w-4xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sky-100 px-4 py-1.5 text-sm font-medium text-sky-700">
-              ✨ Gia sư AI miễn phí cho học sinh lớp 4
+              ✨ Gia sư AI miễn phí cho học sinh tiểu học
             </div>
             <h1 className="mt-4 text-4xl leading-tight font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
               AI không làm bài hộ.
@@ -51,20 +55,20 @@ export default function Home() {
               <span className="text-sky-600">AI học cùng em.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
-              <strong className="text-slate-800">{AI_PERSONA_NAME}</strong> là gia sư AI dạy Toán
-              lớp 4 theo phương pháp Socratic — không cho đáp án sẵn, chỉ đặt câu hỏi dẫn dắt để
-              học sinh tự tìm ra lời giải.
+              <strong className="text-slate-800">{AI_PERSONA_NAME}</strong> là gia sư AI cho học
+              sinh tiểu học lớp 1–5, theo phương pháp Socratic — không cho đáp án sẵn, chỉ đặt câu
+              hỏi dẫn dắt để học sinh tự tìm ra lời giải.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href={`${ROUTES.login}?role=parent`}
-                className={`${buttonVariants({ size: "lg" })} bg-sky-600 px-8 text-base hover:bg-sky-700`}
+                className={`${buttonVariants({ size: "lg" })} bg-sky-600 px-8 text-base transition-transform duration-150 hover:bg-sky-700 active:scale-[0.97]`}
               >
                 Bắt đầu học miễn phí
               </Link>
               <Link
                 href={`${ROUTES.login}?role=teacher`}
-                className={`${buttonVariants({ variant: "outline", size: "lg" })} px-8 text-base`}
+                className={`${buttonVariants({ variant: "outline", size: "lg" })} px-8 text-base transition-transform duration-150 active:scale-[0.97]`}
               >
                 Đăng ký cho lớp học
               </Link>
@@ -84,37 +88,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
-              {/* Chat header */}
-              <div className="flex items-center gap-3 border-b bg-white px-4 py-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sm">
-                  🌥️
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{AI_PERSONA_NAME}</p>
-                  <p className="text-xs text-slate-500">Gia sư Toán lớp 4</p>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div className="space-y-3 bg-slate-50 p-4">
-                <ChatBubble role="user" text="Cô ơi, 24 × 5 bằng bao nhiêu ạ?" />
-                <ChatBubble
-                  role="assistant"
-                  text="Con thử nhớ lại: 24 × 5 cũng giống 24 × 10 rồi chia đôi không nhỉ? 24 × 10 bằng bao nhiêu con biết không?"
-                />
-                <ChatBubble role="user" text="Dạ 240 ạ!" />
-                <ChatBubble
-                  role="assistant"
-                  text="Chính xác! Vậy 240 chia đôi là bao nhiêu? Con tính thử xem nhé 😊"
-                />
-                <ChatBubble role="user" text="Là 120 ạ! Vậy 24 × 5 = 120!" />
-                <ChatBubble
-                  role="assistant"
-                  text="Giỏi quá! Con tự tìm ra rồi đó — và cách tính này con sẽ nhớ rất lâu vì tự nghĩ ra mà. Con có muốn thử bài khó hơn không?"
-                />
-              </div>
-            </div>
+            <AnimatedChatDemo />
 
             <p className="mt-4 text-center text-sm text-slate-500">
               Học sinh tự tìm ra đáp án — Cô Mây chỉ đặt câu hỏi đúng lúc.
@@ -152,9 +126,7 @@ export default function Home() {
         <section className="bg-white px-6 py-16">
           <div className="mx-auto max-w-4xl">
             <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                Dành cho cả ba bên
-              </h2>
+              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Dành cho cả ba bên</h2>
             </div>
             <div className="grid gap-6 sm:grid-cols-3">
               <RoleCard
@@ -203,13 +175,13 @@ export default function Home() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href={`${ROUTES.login}?role=parent`}
-                className={`${buttonVariants({ size: "lg" })} bg-white px-8 text-base text-sky-700 hover:bg-sky-50`}
+                className={`${buttonVariants({ size: "lg" })} bg-white px-8 text-base text-sky-700 transition-transform duration-150 hover:bg-sky-50 active:scale-[0.97]`}
               >
                 Phụ huynh — Đăng ký ngay
               </Link>
               <Link
                 href={`${ROUTES.login}?role=teacher`}
-                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white bg-transparent px-8 text-base text-white hover:bg-sky-700`}
+                className={`${buttonVariants({ variant: "outline", size: "lg" })} border-white bg-transparent px-8 text-base text-white transition-transform duration-150 hover:bg-sky-700 active:scale-[0.97]`}
               >
                 Giáo viên — Tạo lớp học
               </Link>
@@ -235,32 +207,12 @@ export default function Home() {
             </div>
           </div>
           <div className="flex flex-col gap-1 text-xs sm:text-right">
-            <Link href={ROUTES.privacy} className="hover:text-white underline underline-offset-4">
+            <Link href={ROUTES.privacy} className="underline underline-offset-4 hover:text-white">
               Chính sách bảo mật
             </Link>
           </div>
         </div>
       </footer>
-    </div>
-  )
-}
-
-function ChatBubble({ role, text }: { role: "user" | "assistant"; text: string }) {
-  const isUser = role === "user"
-  return (
-    <div className={isUser ? "flex justify-end" : "flex justify-start"}>
-      <div
-        className={
-          isUser
-            ? "max-w-[80%] rounded-2xl rounded-tr-sm bg-sky-600 px-3 py-2 text-sm text-white"
-            : "max-w-[80%] rounded-2xl rounded-tl-sm border bg-white px-3 py-2 text-sm text-slate-800 shadow-sm"
-        }
-      >
-        {!isUser && (
-          <p className="mb-1 text-xs font-semibold text-sky-600">{AI_PERSONA_NAME}</p>
-        )}
-        {text}
-      </div>
     </div>
   )
 }
@@ -275,7 +227,7 @@ function Step({
   description: string
 }) {
   return (
-    <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+    <div className="flex flex-col items-center text-center transition-transform duration-200 hover:-translate-y-0.5 sm:items-start sm:text-left">
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-lg font-bold text-white">
         {number}
       </div>
@@ -314,10 +266,13 @@ function RoleCard({
   color: RoleColor
   features: string[]
 }) {
-
   return (
-    <div className={`rounded-2xl border p-5 ${ROLE_CARD_HEADER[color]}`}>
-      <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${ROLE_CARD_BADGE[color]}`}>
+    <div
+      className={`rounded-2xl border p-5 transition-shadow duration-200 hover:shadow-md ${ROLE_CARD_HEADER[color]}`}
+    >
+      <div
+        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${ROLE_CARD_BADGE[color]}`}
+      >
         <span>{emoji}</span>
         {role}
       </div>

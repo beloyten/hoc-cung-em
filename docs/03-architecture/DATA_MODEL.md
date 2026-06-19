@@ -1,5 +1,7 @@
 # Data Model — HocCungEm
 
+> Cập nhật: 19/06/2026 (sau Phase 1–5). Schema thực tế ở `src/db/schema/*.ts`.
+
 ## 1. ERD (Entity Relationship Diagram)
 
 ```
@@ -21,7 +23,7 @@
 │ id (PK)         │         │ id (PK)          │
 │ teacher_id FK   │         │ auth_user_id FK  │
 │ name            │         │ full_name        │
-│ grade           │ 4       │ email            │
+│ grade           │ 1–5   │ email            │
 │ join_code       │         │ phone            │
 │ created_at      │         │ created_at       │
 └────────┬────────┘         └────────┬─────────┘
@@ -53,17 +55,17 @@
 └──────────────────┘
 
 ┌─────────────────────────┐
-│   study_topics          │  ← Chủ đề tự học GV tạo
+│   study_topics          │  ← Chủ đề GV tạo
 │─────────────────────────│
 │ id (PK)                 │
 │ class_id FK             │
 │ title                   │  vd: "Phép cộng có nhớ trong phạm vi 10000"
 │ description             │
-│ subject                 │  ('math' | future: ...)
+│ subject                 │  subject_enum (nullable, override class-level)
 │ week_number             │
 │ start_date              │
 │ end_date                │
-│ context                 │  text — ngữ cảnh cho AI
+│ context                 │  text — ngữ cảnh cho AI Socratic
 │ created_at              │
 └──────────┬──────────────┘
            │ 1
@@ -140,13 +142,27 @@
 │─────────────────────────────│
 │ id (PK)                     │
 │ class_id FK                 │
-│ week_start                  │
-│ top_errors                  │  jsonb — top 3-5 lỗi phổ biến
+│ week_start                  │  date (UNIQUE per class)
+│ top_errors                  │  jsonb — top 5 lỗi phổ biến
 │ student_attention           │  jsonb — em nào cần chú ý
 │ teaching_suggestions        │  jsonb — gợi ý điều chỉnh
+│ suggested_focus             │  text — Phase 5: ưu tiên tuần sau
 │ generated_by_model          │
 │ generated_at                │
 │ teacher_reviewed_at         │  nullable
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│   topic_templates           │  ← Thư viện mẫu (Phase 1)
+│─────────────────────────────│
+│ id (PK)                     │
+│ grade                       │  integer 1–5
+│ subject                     │  subject_enum
+│ title                       │
+│ description                 │
+│ context                     │  ngữ cảnh Socratic chi tiết
+│ verified_at                 │  date (null = draft)
+│ created_at                  │
 └─────────────────────────────┘
 
 ┌─────────────────────────────┐
@@ -182,22 +198,23 @@
 
 ## 2. Bảng tổng kết
 
-| Bảng | Mục đích | RLS | Note |
-|---|---|---|---|
-| `teachers` | Hồ sơ giáo viên | ✅ self-only | Linked với `auth.users` |
-| `parents` | Hồ sơ phụ huynh | ✅ self-only | Linked với `auth.users` |
-| `classes` | Lớp học | ✅ teacher-owned | Có `join_code` 6 ký tự |
-| `students` | Học sinh | ✅ teacher of class + linked parents | Soft delete |
-| `parent_students` | Liên kết PH ↔ HS | ✅ self-only | Nhiều PH có thể liên kết 1 HS |
-| `study_topics` | Chủ đề tự học | ✅ teacher of class + parents in class | GV tạo, PH thấy |
-| `study_sessions` | Phiên tự học | ✅ teacher of class + linked parents | Auto-create khi PH mở chat |
-| `ai_chats` | Cuộc chat AI | ✅ same as session | Aggregate theo session |
-| `ai_messages` | Từng message | ✅ same as chat | Có `image_paths` |
-| `notebook_uploads` | Ảnh vở | ✅ teacher of class + linked parents | Storage path |
-| `teacher_reviews` | Tick nhanh GV | ✅ teacher-owned | 1-1 với upload |
-| `weekly_insights` | Insight cho GV | ✅ teacher-owned | Cron sinh |
-| `weekly_reports` | Báo cáo PH | ✅ linked parents | Cron sinh |
-| `audit_logs` | Audit trail | ✅ admin-only | Cho compliance |
+| Bảng               | Mục đích         | RLS                                    | Note                                       |
+| ------------------ | ---------------- | -------------------------------------- | ------------------------------------------ |
+| `teachers`         | Hồ sơ giáo viên  | ✅ self-only                           | Linked với `auth.users`                    |
+| `parents`          | Hồ sơ phụ huynh  | ✅ self-only                           | Linked với `auth.users`                    |
+| `classes`          | Lớp học          | ✅ teacher-owned                       | grade 1–5, subject enum, join_code 6 ký tự |
+| `students`         | Học sinh         | ✅ teacher of class + linked parents   | Soft delete                                |
+| `parent_students`  | Liên kết PH ↔ HS | ✅ self-only                           | Nhiều PH có thể liên kết 1 HS              |
+| `study_topics`     | Chủ đề tự học    | ✅ teacher of class + parents in class | GV tạo, PH thấy; subject override class    |
+| `topic_templates`  | Thư viện mẫu     | ✅ SELECT cho authenticated            | Không gắn lớp; GV clone vào `study_topics` |
+| `study_sessions`   | Phiên tự học     | ✅ teacher of class + linked parents   | Auto-create khi PH mở chat                 |
+| `ai_chats`         | Cuộc chat AI     | ✅ same as session                     | Aggregate theo session                     |
+| `ai_messages`      | Từng message     | ✅ same as chat                        | guard_status: passed/fallback              |
+| `notebook_uploads` | Ảnh vở           | ✅ teacher of class + linked parents   | Storage path                               |
+| `teacher_reviews`  | Tick nhanh GV    | ✅ teacher-owned                       | 1-1 với upload                             |
+| `weekly_insights`  | Insight cho GV   | ✅ teacher-owned                       | Cron sinh; `suggested_focus` (Phase 5)     |
+| `weekly_reports`   | Báo cáo PH       | ✅ linked parents                      | Cron sinh                                  |
+| `audit_logs`       | Audit trail      | ✅ admin-only                          | Cho compliance                             |
 
 ---
 
@@ -245,11 +262,11 @@ CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
 
 ## 5. Storage buckets (Supabase Storage)
 
-| Bucket | Mục đích | Public? | RLS |
-|---|---|---|---|
-| `notebook-uploads` | Ảnh vở | ❌ Private | ✅ Same as `notebook_uploads` table |
-| `chat-images` | Ảnh đề bài / bài làm trong chat | ❌ Private | ✅ Parent-owned (tạm) |
-| `avatars` | Ảnh đại diện (optional) | ⚠️ Public | — |
+| Bucket             | Mục đích                        | Public?    | RLS                                 |
+| ------------------ | ------------------------------- | ---------- | ----------------------------------- |
+| `notebook-uploads` | Ảnh vở                          | ❌ Private | ✅ Same as `notebook_uploads` table |
+| `chat-images`      | Ảnh đề bài / bài làm trong chat | ❌ Private | ✅ Parent-owned (tạm)               |
+| `avatars`          | Ảnh đại diện (optional)         | ⚠️ Public  | —                                   |
 
 → Tất cả paths trong DB là dạng `[bucket]/[user_id]/[uuid].[ext]`.
 
@@ -258,6 +275,7 @@ CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
 ## 6. Soft delete pattern
 
 Mọi bảng có dữ liệu HS đều có cột `deleted_at TIMESTAMPTZ NULL`:
+
 - `students`
 - `notebook_uploads`
 - `study_sessions`
@@ -269,11 +287,13 @@ Query mặc định filter `WHERE deleted_at IS NULL`. Không xóa cứng.
 ## 7. Migration & seed
 
 ### Migration files
+
 - Quản lý bằng Drizzle Kit
 - Folder: `src/db/migrations/`
 - Naming: `0001_initial_schema.sql`, `0002_add_audit.sql`, ...
 
 ### Seed data (cho dev)
+
 - File: `src/db/seed.ts`
 - Tạo: 1 GV mẫu, 1 lớp 4A1, 5 HS mẫu, 5 PH mẫu, 1 topic mẫu
 

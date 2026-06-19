@@ -15,6 +15,27 @@
       "when": 1777274609722,
       "tag": "0001_warm_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781869399945,
+      "tag": "0002_heavy_bushwacker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781874246827,
+      "tag": "0003_broad_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781877507718,
+      "tag": "0004_add_suggested_focus",
+      "breakpoints": true
     }
   ]
 }

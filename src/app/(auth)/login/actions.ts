@@ -21,10 +21,7 @@ const PhoneSchema = z
 const RoleSchema = z.enum(["parent", "teacher"]).optional()
 
 // Gửi OTP 6 chữ số qua email — KHÔNG dùng magic link để tránh cross-browser (Gmail in-app browser)
-export async function sendEmailOTP(
-  rawEmail: string,
-  rawRole?: string,
-): Promise<Result<{ email: string }>> {
+export async function sendEmailOTP(rawEmail: string): Promise<Result<{ email: string }>> {
   const parsed = EmailSchema.safeParse(rawEmail)
   if (!parsed.success) {
     return err("VALIDATION", parsed.error.issues[0]?.message ?? "Email không hợp lệ")

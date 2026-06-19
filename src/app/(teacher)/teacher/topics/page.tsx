@@ -29,7 +29,7 @@ export default async function TeacherTopicsPage() {
   }
 
   const teacherClasses = await db
-    .select({ id: classes.id, name: classes.name, grade: classes.grade })
+    .select({ id: classes.id, name: classes.name, grade: classes.grade, subject: classes.subject })
     .from(classes)
     .where(eq(classes.teacherId, teacherId))
 
@@ -86,7 +86,7 @@ export default async function TeacherTopicsPage() {
                   </span>
                 </summary>
                 <div className="mt-5 border-t pt-5">
-                  <TopicCreateForm classId={c.id} />
+                  <TopicCreateForm classId={c.id} grade={c.grade} subject={c.subject} />
                 </div>
               </details>
 

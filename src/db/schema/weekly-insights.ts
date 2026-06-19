@@ -12,6 +12,8 @@ export const weeklyInsights = pgTable(
     topErrors: jsonb("top_errors"),
     studentAttention: jsonb("student_attention"),
     teachingSuggestions: jsonb("teaching_suggestions"),
+    // Data-driven focus suggestion for next week — Phase 5
+    suggestedFocus: text("suggested_focus"),
     generatedByModel: text("generated_by_model").notNull(),
     generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
     teacherReviewedAt: timestamp("teacher_reviewed_at", { withTimezone: true }),

@@ -60,7 +60,7 @@ export function VerifyOTPForm({
     if (mode === "phone") {
       await sendPhoneOTP(identifier)
     } else {
-      await sendEmailOTP(identifier, role)
+      await sendEmailOTP(identifier)
     }
     setMessage({ type: "ok", text: "Đã gửi lại mã OTP." })
   }

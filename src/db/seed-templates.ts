@@ -1,10 +1,11 @@
 // src/db/seed-templates.ts
-// Seed topic templates — Grade 4 Math (GDPT 2018 framework)
+// Seed topic templates — Grade 4 Math + Tiếng Việt (GDPT 2018 framework)
 // pnpm db:seed-templates
 //
 // Templates seeded với verified_at = NULL (draft).
 // Cần giáo viên review theo SGK 2024–2026 trước khi set verified_at.
 
+import { and, eq } from "drizzle-orm"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
@@ -204,21 +205,170 @@ Gợi ý Socratic: "Con đọc xong đề, bài hỏi cái gì? Con đã biết 
   },
 ]
 
+// ---------------------------------------------------------------------------
+// Grade 4 — Tiếng Việt (10 templates)
+// ---------------------------------------------------------------------------
+
+const GRADE4_VIETNAMESE_TEMPLATES: Array<schema.NewTopicTemplate> = [
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Đọc hiểu văn bản",
+    description: "Đọc và trả lời câu hỏi về nội dung, ý nghĩa của đoạn văn / bài văn",
+    context: `Học sinh đọc một đoạn văn và trả lời câu hỏi đọc hiểu lớp 4. Nội dung gồm:
+- Tìm thông tin tường minh: chi tiết, sự kiện, nhân vật được nêu rõ trong bài
+- Suy luận: ý nghĩa hình ảnh, nguyên nhân–kết quả, thái độ nhân vật
+- Tóm tắt ý chính của đoạn / bài
+Cách gợi ý Socratic: hỏi "Đoạn văn này kể về ai? Điều gì xảy ra?", rồi "Tại sao nhân vật lại làm vậy?", rồi "Con nghĩ ý chính đoạn này là gì?".
+Không tóm tắt hộ — để em tự diễn đạt bằng lời của mình.`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Luyện từ và câu — Danh từ, động từ, tính từ",
+    description: "Nhận biết và phân loại danh từ, động từ, tính từ trong câu",
+    context: `Học sinh phân biệt ba từ loại cơ bản. Định nghĩa ngắn gọn:
+- Danh từ: chỉ sự vật, người, nơi chốn, khái niệm (sách, cô giáo, Hà Nội, tình yêu)
+- Động từ: chỉ hành động, trạng thái (chạy, ngủ, nghĩ, là)
+- Tính từ: chỉ đặc điểm, tính chất (đẹp, nhanh, cao, vui)
+Thử: đặt "con" hoặc "cái" trước từ → danh từ; đặt "đang/sẽ" → động từ; "rất" → tính từ.
+Gợi ý Socratic: "Con thử đặt 'rất' trước từ đó xem có tự nhiên không — 'rất chạy' hay 'rất nhanh'?".`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Luyện từ và câu — Câu hỏi, câu kể, câu cảm, câu khiến",
+    description: "Phân biệt 4 kiểu câu theo mục đích nói, sử dụng đúng dấu câu",
+    context: `Học sinh phân biệt 4 kiểu câu. Đặc điểm nhận diện:
+- Câu hỏi: dùng để hỏi, kết thúc bằng "?", thường có từ nghi vấn (ai, gì, nào, không, chưa)
+- Câu kể: dùng để kể/mô tả, kết thúc bằng "."
+- Câu cảm: bày tỏ cảm xúc mạnh, kết thúc bằng "!", thường có "ôi, ồ, chao"
+- Câu khiến: yêu cầu, đề nghị, kết thúc "!" hoặc ".", thường có "hãy, đừng, chớ, xin"
+Gợi ý Socratic: "Câu này người nói muốn làm gì — hỏi, kể, hay bày tỏ cảm xúc?".`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Chính tả — Phân biệt âm/vần dễ lẫn",
+    description: "Luyện viết đúng các âm, vần thường nhầm: l/n, ch/tr, s/x, ên/iên, ao/au…",
+    context: `Học sinh luyện phân biệt các âm/vần dễ lẫn theo phương ngữ và lỗi phổ biến lớp 4:
+- l/n: "nói" ≠ "lói"; mẹo: âm /l/ lưỡi uốn lên, /n/ lưỡi chạm răng trên
+- ch/tr: "chân" ≠ "trân"; học thuộc từng từ, không có quy tắc tuyệt đối
+- s/x: "sẻ" ≠ "xẻ"; gợi ý: "s" hay đi với từ chỉ con vật, sự vật tự nhiên
+- ên/iên: "nhện" ≠ "nhiện"; ên đứng độc lập, iên sau phụ âm
+- ao/au: "màu sắc" — "màu" không phải "mào"
+Cách dạy: không đọc chính tả, thay vào đó hỏi "Con nhớ từ này dùng âm nào? Con thử nghĩ xem từ liên quan nào con biết".`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Tập làm văn — Miêu tả đồ vật",
+    description: "Quan sát và viết bài văn miêu tả một đồ vật theo cấu trúc 3 phần",
+    context: `Học sinh viết bài văn miêu tả đồ vật. Cấu trúc 3 phần:
+1. Mở bài: giới thiệu đồ vật (đó là đồ vật gì? của ai? em có nó từ khi nào?)
+2. Thân bài: miêu tả từng phần theo thứ tự (hình dáng tổng thể → màu sắc → từng bộ phận → vật liệu → công dụng)
+3. Kết bài: cảm nghĩ của em về đồ vật đó
+Cách gợi ý Socratic: đừng viết hộ. Thay vào đó hỏi:
+- "Con đang tả cái gì? Nhìn nó từ xa thấy hình gì?"
+- "Màu sắc thế nào? Có điểm nào đặc biệt không?"
+- "Con dùng đồ vật đó để làm gì? Con thích nhất điều gì ở nó?"`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Tập làm văn — Kể chuyện",
+    description: "Kể lại câu chuyện hoặc sự việc có thật theo trình tự thời gian",
+    context: `Học sinh kể lại câu chuyện (đã nghe/đọc) hoặc sự việc có thật. Yêu cầu:
+- Kể theo trình tự: mở đầu → diễn biến (2–3 sự kiện chính) → kết thúc
+- Dùng từ nối thời gian: "Đầu tiên", "Sau đó", "Tiếp theo", "Cuối cùng"
+- Thêm lời thoại, cảm xúc nhân vật để câu chuyện sinh động
+- Không kể lại y nguyên (nếu là chuyện đã đọc): kể bằng lời của mình
+Gợi ý Socratic: "Chuyện này bắt đầu thế nào? Ai là nhân vật chính? Chuyện gì xảy ra tiếp theo? Kết thúc ra sao?".
+Không viết hộ — chỉ đặt câu hỏi để em nhớ lại và tự kể.`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Từ ghép và từ láy",
+    description: "Phân biệt từ ghép (ghép nghĩa) và từ láy (lặp âm/vần), đặt câu",
+    context: `Học sinh phân biệt từ ghép và từ láy:
+- Từ ghép: kết hợp 2+ tiếng đều có nghĩa hoặc bổ nghĩa cho nhau (nhà cửa, học sinh, máy tính)
+- Từ láy: có âm đầu hoặc vần lặp lại, tạo nhạc điệu (lung linh, nhỏ nhắn, lao xao)
+  - Láy âm đầu: "bờm bờm", "khúc khích"
+  - Láy vần: "lao xao", "bồn chồn"
+  - Láy toàn bộ: "xanh xanh", "ngoan ngoãn"
+Mẹo nhận biết: thử tách từng tiếng xem có nghĩa độc lập không — nếu có → từ ghép; nếu tiếng tách ra vô nghĩa → từ láy.`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Câu có chủ ngữ và vị ngữ",
+    description: "Xác định chủ ngữ (ai/cái gì) và vị ngữ (làm gì/thế nào) trong câu",
+    context: `Học sinh phân tích thành phần chính của câu:
+- Chủ ngữ: trả lời câu hỏi "Ai?" hoặc "Cái gì?" — thường là danh từ, đại từ
+- Vị ngữ: trả lời câu hỏi "Làm gì?", "Là gì?", "Như thế nào?" — thường là động từ, tính từ
+Câu đơn: 1 chủ ngữ + 1 vị ngữ
+Câu ghép: 2+ mệnh đề nối bằng "và, nhưng, vì, nên, tuy…nhưng"
+Bước làm: gạch chân toàn bộ câu → hỏi "Câu này nói về ai/cái gì?" → đó là chủ ngữ → phần còn lại là vị ngữ.
+Gợi ý: "Con thử hỏi 'Ai làm điều đó trong câu này?' — câu trả lời chính là chủ ngữ đó".`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Mở rộng vốn từ — Từ đồng nghĩa và từ trái nghĩa",
+    description: "Nhận biết, phân biệt và sử dụng từ đồng nghĩa, từ trái nghĩa",
+    context: `Học sinh mở rộng vốn từ qua quan hệ nghĩa:
+- Từ đồng nghĩa: cùng nghĩa hoặc gần nghĩa (chết = mất = qua đời; to = lớn = khổng lồ)
+  - Lưu ý: từ đồng nghĩa không phải lúc nào cũng thay thế được hoàn toàn (vd: "mất" dùng cho người, không dùng cho đồ vật như "chết")
+- Từ trái nghĩa: nghĩa đối lập (cao/thấp, nhanh/chậm, tốt/xấu)
+Cách gợi ý: đưa ra ngữ cảnh "Con thử điền từ khác vào câu xem câu có còn đúng không?".
+Bài tập mở rộng: tìm 2–3 từ đồng nghĩa với "đẹp", "to", "đi".`,
+  },
+  {
+    grade: 4,
+    subject: "vietnamese",
+    title: "Dấu câu — Dấu hai chấm, dấu ngoặc kép, dấu gạch ngang",
+    description: "Hiểu và dùng đúng dấu hai chấm, ngoặc kép, gạch ngang trong văn bản",
+    context: `Học sinh nắm công dụng 3 dấu câu mới ở lớp 4:
+- Dấu hai chấm (:) — 3 công dụng: (1) báo hiệu lời nói trực tiếp, (2) liệt kê, (3) giải thích
+- Dấu ngoặc kép ("") — 2 công dụng: (1) trích dẫn lời nói trực tiếp, (2) đánh dấu từ dùng với nghĩa đặc biệt
+- Dấu gạch ngang (—) — 3 công dụng: (1) đánh dấu đầu lời thoại, (2) ngăn cách thành phần chú thích, (3) nối các từ trong liên danh
+Cách gợi ý: "Đoạn này trích dẫn lời ai nói? Con nhìn xem trước lời nói đó có dấu gì?".`,
+  },
+]
+
 async function seedTemplates() {
-  console.log("🌱 Seeding topic templates — Grade 4 Math...")
+  console.log("🌱 Seeding topic templates...")
 
-  const existing = await db
-    .select({ id: schema.topicTemplates.id })
-    .from(schema.topicTemplates)
+  // Seed each batch only if that subject+grade combination has no rows yet
+  const batches: { label: string; rows: Array<schema.NewTopicTemplate> }[] = [
+    { label: "Grade 4 Math (15 templates)", rows: GRADE4_MATH_TEMPLATES },
+    { label: "Grade 4 Tiếng Việt (10 templates)", rows: GRADE4_VIETNAMESE_TEMPLATES },
+  ]
 
-  if (existing.length > 0) {
-    console.log(`⚠️  ${existing.length} templates đã tồn tại — skip seed`)
-    return
+  for (const batch of batches) {
+    const first = batch.rows[0]
+    if (!first) continue
+
+    const existing = await db
+      .select({ id: schema.topicTemplates.id })
+      .from(schema.topicTemplates)
+      .where(
+        and(
+          eq(schema.topicTemplates.grade, first.grade),
+          eq(schema.topicTemplates.subject, first.subject),
+        ),
+      )
+
+    if (existing.length > 0) {
+      console.log(`⚠️  ${batch.label} — đã có ${existing.length} rows, skip`)
+      continue
+    }
+
+    await db.insert(schema.topicTemplates).values(batch.rows)
+    console.log(`✅ Seeded ${batch.label}`)
   }
 
-  await db.insert(schema.topicTemplates).values(GRADE4_MATH_TEMPLATES)
-
-  console.log(`✅ Seeded ${GRADE4_MATH_TEMPLATES.length} Grade 4 Math templates`)
   console.log("   verified_at = NULL (draft) — cần giáo viên review trước khi dùng")
 }
 

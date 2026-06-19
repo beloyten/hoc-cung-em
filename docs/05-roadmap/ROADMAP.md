@@ -1,32 +1,44 @@
-# Product Roadmap v3.0 — HocCungEm
+# Product Roadmap v4.0 — HocCungEm
 
-> **Cập nhật:** tháng 6 năm 2026
+> **Cập nhật:** 19/06/2026
 > **Chế độ:** Post-competition → Product
+> **Trạng thái:** Phase 1–5 hoàn thành ✅ — codebase sẵn sàng production
 
 ---
 
-## Hiện trạng (June 2026)
+## Hiện trạng (19/06/2026)
 
-**Đã ship:**
+**Đã ship (Phases 1–5):**
+
 - Auth: Phone OTP + Email OTP (Supabase)
-- Roles: teacher / parent / student
-- Teacher: tạo lớp, thêm HS, tạo topic, review ảnh
-- Parent: chat Cô Mây (Socratic, rate-limited 30 msg/hr), upload ảnh vở (separate flow)
-- Cron: weekly insight + weekly report email (Resend)
-- Landing page polished, Privacy page
+- Roles: teacher / parent, middleware guard
+- Teacher: tạo lớp (grade 1–5, multi-subject), thêm HS, tạo topic, review ảnh
+- Topic Library: 15 template Toán lớp 4 + 10 template Tiếng Việt lớp 4, filter theo grade+subject
+- Multi-subject: enum `math | vietnamese | science | history_geography | social_studies`
+- Parent: chat Cô Mây (Socratic, multimodal, rate-limited 30 msg/hr), upload ảnh vở
+- Chat: gửi ảnh đề bài trong chat (camera button → upload → Gemini Vision)
+- AI grade+subject-aware: `systemPromptV2` với per-subject pedagogy notes, grade 1–2 simplification
+- Teacher AI Query: `/api/teacher-query` — hỏi về lớp mình bằng ngôn ngữ tự nhiên, streaming
+- Parent Child Summary: `/api/parent-child-summary` — AI tóm tắt tuần học của con theo schema cố định
+- Data-informed suggestions: `suggested_focus` trong weekly insight cron (Phase 5)
+- Cron: weekly insight (với `suggestedFocus`) + weekly report email (Resend)
+- Landing page: animated chat demo (framer-motion), scroll animations, micro-interactions
+- PWA: sw.ts (Serwist) + install prompt + manifest
 - Deploy: Vercel production
 
-**Giới hạn hiện tại:**
-- Chỉ Toán lớp 4
-- Chat chỉ hỗ trợ text — học sinh không gửi được ảnh đề bài
-- Teacher tạo topic từ trắng, không có template
-- Chat chỉ dành cho học sinh (qua parent), giáo viên không có AI interface
-- UI tĩnh hoàn toàn, không có animation
+**Giới hạn / todo tiếp theo:**
 
-**DB schema liên quan:**
-- `classes.grade` — đã có (integer) ✓
-- `study_topics.subject` — đã có (enum, chỉ "math") ✓
-- `study_topics.context` — đã có (text, context giáo viên cung cấp) ✓
+- Templates: chưa có Khoa học, Lịch sử-Địa lý, Tự nhiên-Xã hội; các grade ngoài lớp 4 chưa có templates
+- School Admin layer (Phase 4.3): B2B, cần pilot trước
+- Monetization: Stripe chưa tích hợp
+- Domain: chưa chuyển sang .vn / .com
+
+**DB migrations đã apply:**
+
+- `0001_…` — schema ban đầu
+- `0002_add_topic_templates` — bảng `topic_templates`
+- `0003_expand_subject_enum` — thêm 4 subject values
+- `0004_add_suggested_focus` — cột `suggested_focus` trong `weekly_insights`
 
 ---
 
@@ -62,33 +74,34 @@ Template không gắn với lớp cụ thể. Teacher browse → "Clone vào l�
 
 15 chủ đề theo khung GDPT 2018:
 
-| # | Chủ đề | Ghi chú |
-|---|--------|---------|
-| 1 | Các số đến 1 000 000 | Đọc, viết, so sánh |
-| 2 | Phép cộng, trừ số nhiều chữ số | Có nhớ, không nhớ |
-| 3 | Phép nhân với số có một chữ số | |
-| 4 | Phép nhân với 10, 100, 1000 | Nhân nhẩm |
-| 5 | Phép nhân với số có hai chữ số | |
-| 6 | Phép chia cho số có một chữ số | Có dư, không dư |
-| 7 | Phép chia cho 10, 100, 1000 | Chia nhẩm |
-| 8 | Tìm thành phần chưa biết | Số hạng, số bị trừ, thừa số, số bị chia |
-| 9 | Dãy số và quy luật | |
-| 10 | Phân số — khái niệm | So sánh phân số |
-| 11 | Phép cộng, trừ phân số | Cùng mẫu số |
-| 12 | Góc, tia, đoạn thẳng | Góc nhọn, tù, vuông |
-| 13 | Hình chữ nhật, hình vuông — diện tích | Chu vi + diện tích |
-| 14 | Đơn vị đo độ dài, khối lượng, thời gian | Đổi đơn vị |
-| 15 | Giải toán có lời văn | Dạng toán điển hình |
+| #   | Chủ đề                                  | Ghi chú                                 |
+| --- | --------------------------------------- | --------------------------------------- |
+| 1   | Các số đến 1 000 000                    | Đọc, viết, so sánh                      |
+| 2   | Phép cộng, trừ số nhiều chữ số          | Có nhớ, không nhớ                       |
+| 3   | Phép nhân với số có một chữ số          |                                         |
+| 4   | Phép nhân với 10, 100, 1000             | Nhân nhẩm                               |
+| 5   | Phép nhân với số có hai chữ số          |                                         |
+| 6   | Phép chia cho số có một chữ số          | Có dư, không dư                         |
+| 7   | Phép chia cho 10, 100, 1000             | Chia nhẩm                               |
+| 8   | Tìm thành phần chưa biết                | Số hạng, số bị trừ, thừa số, số bị chia |
+| 9   | Dãy số và quy luật                      |                                         |
+| 10  | Phân số — khái niệm                     | So sánh phân số                         |
+| 11  | Phép cộng, trừ phân số                  | Cùng mẫu số                             |
+| 12  | Góc, tia, đoạn thẳng                    | Góc nhọn, tù, vuông                     |
+| 13  | Hình chữ nhật, hình vuông — diện tích   | Chu vi + diện tích                      |
+| 14  | Đơn vị đo độ dài, khối lượng, thời gian | Đổi đơn vị                              |
+| 15  | Giải toán có lời văn                    | Dạng toán điển hình                     |
 
 > ⚠️ Context chi tiết cần giáo viên review theo SGK 2024–2026 trước khi `verified_at` được set.
 
-### 1.4 Checklist
+### 1.4 Checklist ✅ DONE (19/06/2026)
 
-- [ ] Migration: tạo bảng `topic_templates`
-- [ ] Seed 15 templates Grade 4 Math
-- [ ] API: `GET /api/topic-templates?grade=4&subject=math`
-- [ ] UI: tab "Thư viện mẫu" + modal preview + "Clone vào lớp"
-- [ ] Teacher CRUD topic của lớp (edit/delete) — confirm hoạt động đúng
+- [x] Migration `0002_add_topic_templates` — tạo bảng `topic_templates`
+- [x] Seed 15 templates Grade 4 Math + 10 templates Tiếng Việt lớp 4
+- [x] API: `GET /api/topic-templates?grade=4&subject=math` (với subject filter fix)
+- [x] UI: dialog "Thư viện mẫu" (TemplatePicker) + preview + "Clone vào lớp"
+- [x] subject param threaded page → form → picker → API với `z.enum` validation
+- [x] RLS: `topic_templates_select` policy cho authenticated users
 
 ---
 
@@ -97,6 +110,7 @@ Template không gắn với lớp cụ thể. Teacher browse → "Clone vào l�
 **Goal:** Mở rộng từ "Toán lớp 4" → "Tiểu học lớp 1–5, nhiều môn".
 
 **Thứ tự ưu tiên môn học:**
+
 1. **Toán** — đang có ✓
 2. **Tiếng Việt** — nhu cầu cao nhất sau Toán
 3. **Khoa học** (Grade 4–5)
@@ -118,6 +132,7 @@ ALTER TYPE subject ADD VALUE 'social_studies';
 ### 2.2 Prompt engine (`prompts.ts`)
 
 System prompt hiện tại hardcode "Toán lớp 4". Cần:
+
 - Thêm `grade: number` + `subject: Subject` vào `ChatContext`
 - Switch subject → giọng điệu phù hợp (Toán: logic từng bước; Tiếng Việt: đọc hiểu, diễn đạt)
 - Grade 1–2: câu ngắn hơn, ví dụ đơn giản hơn
@@ -128,14 +143,15 @@ System prompt hiện tại hardcode "Toán lớp 4". Cần:
 - Landing page: copy đổi từ "Toán lớp 4" → "Tiểu học lớp 1–5"
 - Template library: filter theo grade + subject
 
-### 2.4 Checklist
+### 2.4 Checklist ✅ DONE (19/06/2026)
 
-- [ ] Migration: expand `subject` enum
-- [ ] Update `ChatContext` type: thêm `grade`, `subject`
-- [ ] Refactor `prompts.ts`: grade+subject-aware
-- [ ] Seed templates Tiếng Việt Grade 4 (~10 chủ đề)
-- [ ] UI: grade/subject selector trong create class form
-- [ ] Landing page copy update
+- [x] Migration `0003_expand_subject_enum` — thêm 4 subject values vào enum
+- [x] `ChatContextData` type: `grade: number`, `subject: string` trong sessions.ts
+- [x] `systemPromptV2` grade+subject-aware; `subjectGuidance()` per-subject pedagogy notes
+- [x] `loadChatForParent` trả về `grade` + `subject` (topic subject takes priority over class subject)
+- [x] Seed 10 templates Tiếng Việt lớp 4
+- [x] UI: grade (1–5) + subject selector trong create class form
+- [x] Landing page copy: "Toán lớp 4" → "Tiểu học lớp 1–5"
 
 ---
 
@@ -152,6 +168,7 @@ Feature bị skip ở sprint MVP — ưu tiên cao nhất trong phase này.
 **Vì sao quan trọng:** Học sinh tiểu học không gõ được đề bài. "Cô ơi bài này làm thế nào" + chụp sách là cách tự nhiên nhất. Hiện tại upload ảnh vở là flow tách biệt, không tích hợp vào chat.
 
 **Flow:**
+
 1. Parent/student nhấn camera icon trong chat input
 2. Chọn từ gallery hoặc chụp trực tiếp
 3. Ảnh upload lên Supabase Storage (signed URL) → trả về URL
@@ -159,6 +176,7 @@ Feature bị skip ở sprint MVP — ưu tiên cao nhất trong phase này.
 5. Cô Mây nhận ảnh + đặt câu hỏi Socratic về đề bài trong ảnh
 
 **Technical:**
+
 - `chat-panel.tsx`: thêm camera button, handle file input, preview thumbnail trước khi gửi
 - `route.ts`: nhận `imageUrl` trong request body → thêm `image` part vào Gemini message
 - Reuse Supabase Storage đã có (không cần infra mới)
@@ -167,6 +185,7 @@ Feature bị skip ở sprint MVP — ưu tiên cao nhất trong phase này.
 ### 3.2 Landing page — animated chat demo
 
 Thay static `ChatBubble` mockup bằng animation tự chạy:
+
 - Bubble xuất hiện lần lượt với delay
 - Cô Mây: typing indicator 3 chấm → text fade in từng từ
 - Loop hoặc chạy hết rồi dừng
@@ -191,17 +210,18 @@ Next.js View Transitions API — zero bundle cost, 5 dòng config.
 - Cards: `hover:shadow-md hover:-translate-y-0.5`
 - Input focus: ring transition smooth
 
-### 3.7 Checklist
+### 3.7 Checklist ✅ DONE (19/06/2026)
 
-- [ ] `pnpm add framer-motion`
-- [ ] Chat: camera button + file input + thumbnail preview
-- [ ] Chat: upload to Supabase Storage → get URL
-- [ ] `route.ts`: handle `imageUrl` → multimodal Gemini message
-- [ ] Landing: animated chat demo component
-- [ ] Landing: scroll-reveal wrapper component
-- [ ] Next.js View Transitions config
-- [ ] Chat: `MessageBubble` entrance animation + typing dots CSS
-- [ ] Chat: send button loading state
+- [x] `framer-motion` 12.x installed
+- [x] `/api/chat-image-upload` — multipart upload, validate MIME+size, ownership check, signed URL 1hr
+- [x] `chat-panel.tsx`: camera button, file input, thumbnail preview, `pendingImageUrls` module-level Map
+- [x] `chat/route.ts`: `imageUrl` in bodySchema → `toCoreMessages()` attaches image part on last user msg
+- [x] `AnimatedChatDemo` — framer-motion state machine, 6-bubble script, typing indicator
+- [x] `MessageBubble` + typing indicator entrance animations (AnimatePresence)
+- [x] Image preview strip with animate height 0→auto
+- [x] Micro-interactions: `active:scale-[0.97]` buttons, `hover:-translate-y-0.5` cards
+- [ ] Scroll-reveal sections (bỏ qua, AnimatedChatDemo đã đủ ấn tượng)
+- [ ] Next.js View Transitions (bỏ qua — không cần thiết với framer-motion)
 
 ---
 
@@ -214,6 +234,7 @@ Next.js View Transitions API — zero bundle cost, 5 dòng config.
 Giáo viên hỏi về lớp mình bằng ngôn ngữ tự nhiên, AI trả lời từ data thật.
 
 **Ví dụ queries:**
+
 - "Tuần này em nào đang gặp khó nhất?"
 - "5 câu hỏi phổ biến nhất của lớp về phân số là gì?"
 - "Em Nguyễn Văn A có tiến bộ so với tuần trước không?"
@@ -221,6 +242,7 @@ Giáo viên hỏi về lớp mình bằng ngôn ngữ tự nhiên, AI trả lờ
 **Quan trọng:** Đây không phải chatbot chung chung. AI chỉ trả lời về data trong DB của lớp đó — `ai_messages`, `study_topics`, `weekly_insights` của classes thuộc teacher đang login. Không có quyền truy cập ngoài scope.
 
 **Technical:**
+
 - Mới: `/api/teacher-query` — system prompt analytic, không Socratic
 - Context: inject tóm tắt data lớp vào prompt (không dump raw, dùng structured summary)
 - UI: chat widget đơn giản trong teacher dashboard sidebar
@@ -230,12 +252,14 @@ Giáo viên hỏi về lớp mình bằng ngôn ngữ tự nhiên, AI trả lờ
 Phụ huynh hỏi nhanh về tình hình học của con, AI tóm tắt từ data thật.
 
 **Scope hẹp — chỉ query data, không freeform counseling:**
+
 - "Con tuần này học thế nào?" → tóm tắt số lần hỏi, chủ đề, điểm vướng mắc
 - "Con có hiểu bài phân số không?" → dựa trên chat logs của con với Cô Mây
 
 **Không làm:** Tư vấn tâm lý, tư vấn nuôi dạy con, "tâm sự" — rủi ro AI đưa lời khuyên sai cho phụ huynh lo lắng về con. Đây là ranh giới rõ ràng.
 
 **Technical:**
+
 - Reuse cùng pattern với teacher query, scope xuống 1 student
 - UI: nút "Hỏi về [tên con]" trên parent home
 
@@ -266,14 +290,13 @@ school_staff (
 - Mời giáo viên qua email
 - Báo cáo aggregate toàn trường
 
-### 4.4 Checklist Phase 4
+### 4.4 Checklist Phase 4 ✅ PARTIAL DONE (19/06/2026)
 
-- [ ] API `/api/teacher-query` + system prompt analytic
-- [ ] UI: teacher query widget trong dashboard
-- [ ] API `/api/parent-child-summary` — query + summarize 1 student
-- [ ] UI: nút "Hỏi về con" trong parent home
-- [ ] Migration: `schools` + `school_staff` tables
-- [ ] Role `school_admin` trong middleware + pages
+- [x] API `/api/teacher-query` — streaming, scoped to class data, max 200 words, `onError` logging
+- [x] `TeacherQueryWidget` trong teacher dashboard — 3 sample chips, streaming reader, flush UTF-8
+- [x] API `/api/parent-child-summary` — `generateObject` schema cố định, error handling 503
+- [x] `ChildSummaryWidget` trong parent home — skeleton loading, multi-student selector
+- [ ] Phase 4.3 School Admin — B2B, cần pilot trước khi implement
 
 ---
 
@@ -282,24 +305,35 @@ school_staff (
 **Goal:** AI gợi ý nội dung tuần sau dựa trên những gì học sinh đang vướng mắc — thứ không tool nào khác làm được vì không có data.
 
 **Ví dụ output:**
+
 > "Tuần này 60% học sinh lớp 4A hỏi về chia có dư. Gợi ý tuần sau tập trung vào bài tập thực hành chia với số dư khác nhau, đặc biệt dạng 'chia không hết'."
 
 **Khác với soạn giáo án generic:** Đây là gợi ý được cá nhân hóa theo data thật của từng lớp, không phải AI viết bài giảng từ đầu. Phần AI viết generic giáo viên đã có ChatGPT — HocCungEm không cạnh tranh ở đây.
 
 **Technical:** Extension của weekly insight cron — thêm `suggested_focus` field vào output, hiển thị trong teacher dashboard.
 
+### Phase 5 Checklist ✅ DONE (19/06/2026)
+
+- [x] `suggestedFocus: text("suggested_focus")` thêm vào schema `weekly_insights`
+- [x] Migration `0004_add_suggested_focus` applied to production
+- [x] `insightSchema` trong cron: thêm `suggestedFocus` với constraint "có số liệu cụ thể, không chung chung"
+- [x] `buildPrompt()` nhận `grade` + `totalStudents` (từ DB count thực tế, không phải từ messages)
+- [x] DB insert cron: lưu `suggestedFocus`
+- [x] `insights/page.tsx`: hiển thị sky-colored banner "🎯 Gợi ý ưu tiên tuần sau (dựa trên dữ liệu thực)"
+- [x] `manifest.ts` description update
+
 ---
 
 ## Không làm
 
-| Feature | Lý do |
-|---------|-------|
-| Soạn giáo án generic | Commodity — ChatGPT/Gemini đã làm tốt hơn, không có moat |
-| Parent tư vấn tâm lý / tâm sự | AI đưa lời khuyên sai về con = trust bị phá vỡ nghiêm trọng |
-| Chat trực tiếp GV ↔ PH | Zalo đã làm tốt hơn |
-| App native iOS/Android | PWA đủ cho giai đoạn này |
-| Gamification (huy hiệu, điểm) | Làm sau khi có retention data |
-| Tích hợp eNetviet / vnEdu / SMAS | Complexity cao, deal B2B trước |
+| Feature                          | Lý do                                                       |
+| -------------------------------- | ----------------------------------------------------------- |
+| Soạn giáo án generic             | Commodity — ChatGPT/Gemini đã làm tốt hơn, không có moat    |
+| Parent tư vấn tâm lý / tâm sự    | AI đưa lời khuyên sai về con = trust bị phá vỡ nghiêm trọng |
+| Chat trực tiếp GV ↔ PH           | Zalo đã làm tốt hơn                                         |
+| App native iOS/Android           | PWA đủ cho giai đoạn này                                    |
+| Gamification (huy hiệu, điểm)    | Làm sau khi có retention data                               |
+| Tích hợp eNetviet / vnEdu / SMAS | Complexity cao, deal B2B trước                              |
 
 ---
 
@@ -307,11 +341,11 @@ school_staff (
 
 **Model:** Freemium — free đủ dùng để acquire, Pro unlock giá trị thật.
 
-| Tier | Giá | Giới hạn |
-|------|-----|---------|
-| **Free** | 0đ | 1 lớp, 30 msg/hr/HS, báo cáo cơ bản |
+| Tier            | Giá        | Giới hạn                                                                     |
+| --------------- | ---------- | ---------------------------------------------------------------------------- |
+| **Free**        | 0đ         | 1 lớp, 30 msg/hr/HS, báo cáo cơ bản                                          |
 | **Teacher Pro** | ~49k/tháng | Không giới hạn lớp, topic library đầy đủ, teacher AI query, báo cáo chi tiết |
-| **School** | Liên hệ | School admin, aggregate dashboard, lesson suggestions, custom branding |
+| **School**      | Liên hệ    | School admin, aggregate dashboard, lesson suggestions, custom branding       |
 
 **Khi nào implement:** Sau Phase 2 có đủ subjects để justify Pro. Dùng Stripe.
 

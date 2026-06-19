@@ -9,6 +9,7 @@ import { SignOutButton } from "@/components/sign-out-button"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { EmptyState, PageContainer, PageHeader, SectionHeader } from "@/components/page-layout"
+import { TeacherQueryWidget } from "@/components/teacher/teacher-query-widget"
 import { APP_NAME } from "@/lib/constants"
 import { AuthError, requireTeacher } from "@/server/auth"
 
@@ -168,6 +169,21 @@ export default async function TeacherDashboardPage() {
           />
         </ul>
       </section>
+
+      {/* AI Query Widget — shown only when teacher has at least one class */}
+      {teacherClasses.length > 0 && (
+        <section className="mb-2">
+          <SectionHeader
+            title="Hỏi AI về lớp"
+            description="Đặt câu hỏi bằng tiếng Việt — AI trả lời từ dữ liệu thực của lớp."
+          />
+          <div className="grid gap-4 md:grid-cols-2">
+            {teacherClasses.map((c) => (
+              <TeacherQueryWidget key={c.id} classId={c.id} className={c.name} />
+            ))}
+          </div>
+        </section>
+      )}
     </PageContainer>
   )
 }

@@ -5,7 +5,7 @@ import { aiChats, aiMessages } from "@/db/schema"
 import { AuthError } from "@/server/auth"
 import { FLASH, google } from "@/server/ai/client"
 import { aiGuard, FALLBACK_RESPONSE } from "@/server/ai/guard"
-import { systemPromptV1 } from "@/server/ai/prompts"
+import { systemPromptV2 } from "@/server/ai/prompts"
 import { loadChatForParent } from "@/server/ai/sessions"
 import { and, count, eq, gt, sql } from "drizzle-orm"
 
@@ -15,6 +15,7 @@ export const maxDuration = 60
 const bodySchema = z.object({
   chatId: z.string().uuid(),
   messages: z.array(z.unknown()),
+  imageUrl: z.string().url().optional(),
 })
 
 // Fallback to 30 if env var is unset or non-numeric.
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
   const messages = parsed.messages as UIMessage[]
   const lastUser = messages.findLast((m) => m.role === "user")
   const lastUserText = lastUser ? extractText(lastUser) : ""
+  const imageUrl = parsed.imageUrl
 
   console.log("[chat:POST] uiMessages=%d lastRole=%s", messages.length, messages.at(-1)?.role)
 
@@ -84,8 +86,10 @@ export async function POST(req: Request) {
     }
 
     const startedAt = Date.now()
-    const system = systemPromptV1({
+    const system = systemPromptV2({
       studentName: chatCtx.studentName,
+      grade: chatCtx.grade,
+      subject: chatCtx.subject,
       topicTitle: chatCtx.topicTitle,
       topicContext: chatCtx.topicContext,
     })
@@ -93,7 +97,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model: google(FLASH),
       system,
-      messages: toCoreMessages(messages),
+      messages: toCoreMessages(messages, imageUrl),
       onError: ({ error }) => {
         console.error("[chat:streamText] stream error", error)
       },
@@ -147,15 +151,37 @@ function extractText(msg: UIMessage): string {
 
 // SDK may attach internal parts (step-start etc.) to streamed UIMessages;
 // toCoreMessages strips those to avoid crash on turn 2+.
-type ChatMessage = { role: "user"; content: string } | { role: "assistant"; content: string }
+// When imageUrl is provided it is attached as an image part on the last user message.
+type TextPart = { type: "text"; text: string }
+type ImagePart = { type: "image"; image: URL }
+type CoreUserMessage = { role: "user"; content: string | Array<TextPart | ImagePart> }
+type CoreAssistantMessage = { role: "assistant"; content: string }
+type ChatMessage = CoreUserMessage | CoreAssistantMessage
 
-function toCoreMessages(messages: UIMessage[]): ChatMessage[] {
+function toCoreMessages(messages: UIMessage[], imageUrl?: string): ChatMessage[] {
   const result: ChatMessage[] = []
-  for (const m of messages) {
+  const lastUserIdx = messages.findLastIndex((m) => m.role === "user")
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i]
+    if (!m) continue
     const text = extractText(m)
     if (!text) continue
-    if (m.role === "user") result.push({ role: "user", content: text })
-    else if (m.role === "assistant") result.push({ role: "assistant", content: text })
+    if (m.role === "user") {
+      // Attach image only to the last user message
+      if (i === lastUserIdx && imageUrl) {
+        result.push({
+          role: "user",
+          content: [
+            { type: "image", image: new URL(imageUrl) },
+            { type: "text", text },
+          ],
+        })
+      } else {
+        result.push({ role: "user", content: text })
+      }
+    } else if (m.role === "assistant") {
+      result.push({ role: "assistant", content: text })
+    }
   }
   return result
 }

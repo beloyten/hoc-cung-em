@@ -1,7 +1,7 @@
 // src/server/cron/weekly-insights.ts
 // Tổng hợp insight tuần cho từng lớp (giáo viên xem).
 import "server-only"
-import { and, asc, eq, gte, lt } from "drizzle-orm"
+import { and, asc, count, eq, gte, isNull, lt } from "drizzle-orm"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { db } from "@/db"
@@ -35,6 +35,13 @@ const insightSchema = z.object({
     .array(z.string().min(1).max(200))
     .max(5)
     .describe("Tối đa 5 gợi ý giảng dạy tuần tới."),
+  suggestedFocus: z
+    .string()
+    .min(1)
+    .max(400)
+    .describe(
+      "1–2 câu tóm tắt cụ thể, dựa trên dữ liệu thực (ví dụ: tỷ lệ % HS hỏi về chủ đề nào), gợi ý nội dung GV nên ưu tiên tuần sau. Không chung chung. Có số liệu cụ thể nếu có thể.",
+    ),
 })
 
 interface ClassMessage {
@@ -44,7 +51,12 @@ interface ClassMessage {
   topicTitle: string | null
 }
 
-function buildPrompt(className: string, items: ClassMessage[]): string {
+function buildPrompt(
+  className: string,
+  grade: number,
+  totalStudents: number,
+  items: ClassMessage[],
+): string {
   const lines = items
     .slice(0, 300)
     .map(
@@ -52,14 +64,21 @@ function buildPrompt(className: string, items: ClassMessage[]): string {
         `[${m.studentName} · ${m.role}]${m.topicTitle ? ` (${m.topicTitle})` : ""} ${m.content}`,
     )
     .join("\n")
-  return `Bạn là trợ lý phân tích cho giáo viên Toán lớp 4 trên ứng dụng HọcCùngEm.
-Lớp: ${className}.
+
+  const activeStudents = new Set(items.filter((m) => m.role === "user").map((m) => m.studentName))
+    .size
+
+  return `Bạn là trợ lý phân tích cho giáo viên lớp ${grade} trên ứng dụng HọcCùngEm.
+Lớp: ${className} (khối ${grade}, tổng ${totalStudents} HS, tuần này hoạt động: ${activeStudents} em).
 Hội thoại tuần qua giữa các học sinh trong lớp và Cô Mây:
 
 ${lines}
 
 Hãy tổng hợp insight cho giáo viên theo schema. Văn phong chuyên nghiệp, ngắn gọn, tiếng Việt.
-Tập trung vào: khái niệm mà nhiều em cùng vướng, học sinh cần chú ý, và gợi ý giảng dạy tuần tới.`
+- topErrors: khái niệm nhiều em cùng vướng
+- studentAttention: HS cần chú ý (dựa trên tần suất câu hỏi, dấu hiệu chưa hiểu bài)
+- teachingSuggestions: gợi ý giảng dạy cụ thể cho tuần tới
+- suggestedFocus: **1–2 câu dựa trên dữ liệu** (ví dụ: "${activeStudents}/${totalStudents} em hỏi về X") gợi ý nội dung GV nên ưu tiên tuần sau. Phải có số liệu thực, không chung chung.`
 }
 
 export interface RunResult {
@@ -74,7 +93,9 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
   const weekStart = previousWeekStartICT(now)
   const { start, endExclusive } = weekRangeUTC(weekStart)
 
-  const allClasses = await db.select({ id: classes.id, name: classes.name }).from(classes)
+  const allClasses = await db
+    .select({ id: classes.id, name: classes.name, grade: classes.grade })
+    .from(classes)
 
   const result: RunResult = {
     weekStart,
@@ -122,10 +143,17 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
         continue
       }
 
+      // Count total enrolled students in this class (not just active ones)
+      const [enrolledRow] = await db
+        .select({ total: count(students.id) })
+        .from(students)
+        .where(and(eq(students.classId, c.id), isNull(students.deletedAt)))
+      const totalStudents = Number(enrolledRow?.total ?? 0)
+
       const { object } = await generateObject({
         model: google(FLASH),
         schema: insightSchema,
-        prompt: buildPrompt(c.name, messages),
+        prompt: buildPrompt(c.name, c.grade, totalStudents, messages),
       })
 
       await db.insert(weeklyInsights).values({
@@ -134,6 +162,7 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
         topErrors: object.topErrors,
         studentAttention: object.studentAttention,
         teachingSuggestions: object.teachingSuggestions,
+        suggestedFocus: object.suggestedFocus,
         generatedByModel: FLASH,
       })
 

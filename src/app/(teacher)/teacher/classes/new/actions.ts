@@ -3,12 +3,13 @@ import { redirect } from "next/navigation"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
-import { classes, students } from "@/db/schema"
+import { classes, students, subjectEnum } from "@/db/schema"
 import { requireTeacher, AuthError } from "@/server/auth"
 
 const classSchema = z.object({
   name: z.string().trim().min(1, "Tên lớp không được trống").max(50),
   grade: z.coerce.number().int().min(1).max(5),
+  subject: z.enum(subjectEnum.enumValues).default("math"),
   // danh sách tên học sinh, mỗi dòng 1 em
   studentNames: z
     .string()
@@ -53,6 +54,7 @@ export async function createClassAction(formData: FormData): Promise<{ error?: s
   const parsed = classSchema.safeParse({
     name: formData.get("name"),
     grade: formData.get("grade"),
+    subject: formData.get("subject"),
     studentNames: formData.get("studentNames"),
   })
   if (!parsed.success) {
@@ -68,6 +70,7 @@ export async function createClassAction(formData: FormData): Promise<{ error?: s
       teacherId: teacher.id,
       name: parsed.data.name,
       grade: parsed.data.grade,
+      subject: parsed.data.subject,
       joinCode,
     })
     .returning()

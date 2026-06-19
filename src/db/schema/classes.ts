@@ -1,4 +1,5 @@
 import { index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { subjectEnum } from "./study-topics"
 import { teachers } from "./teachers"
 
 export const classes = pgTable(
@@ -10,6 +11,7 @@ export const classes = pgTable(
       .references(() => teachers.id),
     name: text("name").notNull(),
     grade: integer("grade").notNull(),
+    subject: subjectEnum("subject").default("math").notNull(),
     joinCode: text("join_code").notNull().unique(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

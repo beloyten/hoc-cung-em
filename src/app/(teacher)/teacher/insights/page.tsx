@@ -93,6 +93,7 @@ export default async function TeacherInsightsPage() {
             const errors = bullets(r.topErrors)
             const attention = attentionItems(r.studentAttention)
             const teaching = bullets(r.teachingSuggestions)
+            const focus = typeof r.suggestedFocus === "string" ? r.suggestedFocus : null
             return (
               <li key={r.id} className="bg-card rounded-2xl border p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b pb-3">
@@ -103,6 +104,16 @@ export default async function TeacherInsightsPage() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Data-driven focus suggestion — Phase 5 */}
+                  {focus && (
+                    <div className="rounded-xl bg-sky-50 px-4 py-3">
+                      <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-sky-700">
+                        <span aria-hidden="true">🎯</span>
+                        Gợi ý ưu tiên tuần sau (dựa trên dữ liệu thực)
+                      </p>
+                      <p className="text-sm text-sky-900">{focus}</p>
+                    </div>
+                  )}
                   {errors.length > 0 && (
                     <InsightBlock
                       icon="⚠️"

@@ -1,7 +1,23 @@
 import { date, index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { classes } from "./classes"
 
-export const subjectEnum = pgEnum("subject", ["math"])
+export const subjectEnum = pgEnum("subject", [
+  "math",
+  "vietnamese",
+  "science",
+  "history_geography",
+  "social_studies",
+])
+
+export const SUBJECT_LABELS: Record<(typeof subjectEnum.enumValues)[number], string> = {
+  math: "Toán",
+  vietnamese: "Tiếng Việt",
+  science: "Khoa học",
+  history_geography: "Lịch sử & Địa lý",
+  social_studies: "Tự nhiên & Xã hội",
+}
+
+export type Subject = (typeof subjectEnum.enumValues)[number]
 
 export const studyTopics = pgTable(
   "study_topics",

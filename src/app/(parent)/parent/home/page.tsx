@@ -2,7 +2,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { eq } from "drizzle-orm"
+import { db } from "@/db"
+import { parentStudents, students } from "@/db/schema"
 import { SignOutButton } from "@/components/sign-out-button"
+import { ChildSummaryWidget } from "@/components/parent/child-summary-widget"
 import { AI_PERSONA_NAME, APP_NAME } from "@/lib/constants"
 import { AuthError, requireParent } from "@/server/auth"
 
@@ -11,9 +15,11 @@ export const metadata: Metadata = {
 }
 
 export default async function ParentHomePage() {
+  let parentId: string
   let parentName: string
   try {
     const { parent } = await requireParent()
+    parentId = parent.id
     parentName = parent.fullName
   } catch (e) {
     if (e instanceof AuthError) {
@@ -21,6 +27,12 @@ export default async function ParentHomePage() {
     }
     throw e
   }
+
+  const myStudents = await db
+    .select({ id: students.id, fullName: students.fullName })
+    .from(parentStudents)
+    .innerJoin(students, eq(students.id, parentStudents.studentId))
+    .where(eq(parentStudents.parentId, parentId))
 
   return (
     <main className="container mx-auto max-w-2xl px-4 py-8">
@@ -57,7 +69,7 @@ export default async function ParentHomePage() {
         </div>
       </Link>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Link
           href="/parent/upload"
           className="bg-card hover:border-primary/40 group flex flex-col gap-2 rounded-2xl border p-5 shadow-sm transition-colors"
@@ -89,6 +101,8 @@ export default async function ParentHomePage() {
           <span className="text-muted-foreground text-xs">Nhập mã lớp & chọn con</span>
         </Link>
       </div>
+
+      {myStudents.length > 0 && <ChildSummaryWidget students={myStudents} />}
     </main>
   )
 }

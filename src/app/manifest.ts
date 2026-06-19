@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "HocCungEm — Học cùng em",
     short_name: "HocCungEm",
-    description: "AI không làm bài hộ. AI học cùng em. Trợ giảng Toán lớp 4 cùng Cô Mây.",
+    description:
+      "AI không làm bài hộ. AI học cùng em. Gia sư AI cho học sinh tiểu học lớp 1–5 cùng Cô Mây.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

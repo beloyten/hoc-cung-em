@@ -50,7 +50,7 @@ export function LoginForm({ role }: { role?: Role }) {
     e.preventDefault()
     setEmailPending(true)
     setEmailMsg(null)
-    const result = await sendEmailOTP(email, role)
+    const result = await sendEmailOTP(email)
     setEmailPending(false)
     if (result.ok) {
       // Chuyển sang trang nhập OTP email — tránh cross-browser (Gmail in-app browser)

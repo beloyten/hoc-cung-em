@@ -7,6 +7,14 @@ import { createClassAction } from "./actions"
 
 const GRADE_OPTIONS = [1, 2, 3, 4, 5]
 
+const SUBJECT_OPTIONS = [
+  { value: "math", label: "Toán" },
+  { value: "vietnamese", label: "Tiếng Việt" },
+  { value: "science", label: "Khoa học" },
+  { value: "history_geography", label: "Lịch sử & Địa lý" },
+  { value: "social_studies", label: "Tự nhiên & Xã hội" },
+]
+
 export function CreateClassForm() {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +31,7 @@ export function CreateClassForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="class-name">Tên lớp</Label>
           <Input
@@ -49,6 +57,24 @@ export function CreateClassForm() {
             {GRADE_OPTIONS.map((g) => (
               <option key={g} value={g}>
                 Khối {g}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="class-subject">Môn chính</Label>
+          <select
+            id="class-subject"
+            name="subject"
+            title="Chọn môn học"
+            defaultValue="math"
+            disabled={pending}
+            className="border-input bg-background h-9 w-full rounded-md border px-3 py-1 text-sm"
+          >
+            {SUBJECT_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
               </option>
             ))}
           </select>

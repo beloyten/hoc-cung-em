@@ -1,0 +1,1 @@
+ALTER TABLE "weekly_insights" ADD COLUMN "suggested_focus" text;

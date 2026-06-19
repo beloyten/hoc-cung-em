@@ -6,13 +6,34 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { currentWeekDates } from "@/lib/dates"
+import type { TopicTemplate } from "@/db/schema"
 import { createTopicAction } from "./actions"
+import { TemplatePicker } from "./template-picker"
 
-export function TopicCreateForm({ classId }: { classId: string }) {
+export function TopicCreateForm({
+  classId,
+  grade,
+  subject,
+}: {
+  classId: string
+  grade: number
+  subject: string
+}) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const defaults = useMemo(() => currentWeekDates(), [])
+
+  // Controlled values — set when teacher picks a template
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [context, setContext] = useState("")
+
+  function applyTemplate(t: TopicTemplate) {
+    setTitle(t.title)
+    setDescription(t.description ?? "")
+    setContext(t.context ?? "")
+  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -27,6 +48,9 @@ export function TopicCreateForm({ classId }: { classId: string }) {
         return
       }
       form.reset()
+      setTitle("")
+      setDescription("")
+      setContext("")
       router.refresh()
     })
   }
@@ -34,6 +58,13 @@ export function TopicCreateForm({ classId }: { classId: string }) {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <input type="hidden" name="classId" value={classId} />
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-sm">
+          Điền thông tin chủ đề, hoặc chọn từ thư viện mẫu.
+        </p>
+        <TemplatePicker grade={grade} subject={subject} onSelect={applyTemplate} />
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor={`title-${classId}`} className="text-sm font-medium">
@@ -45,6 +76,8 @@ export function TopicCreateForm({ classId }: { classId: string }) {
           placeholder="vd: Phép cộng có nhớ trong phạm vi 1000"
           required
           maxLength={200}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
       </div>
 
@@ -99,6 +132,8 @@ export function TopicCreateForm({ classId }: { classId: string }) {
           rows={2}
           maxLength={500}
           placeholder="vd: Tuần này lớp ôn cộng có nhớ với số 4 chữ số."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
         />
       </div>
 
@@ -113,6 +148,8 @@ export function TopicCreateForm({ classId }: { classId: string }) {
           rows={4}
           maxLength={4000}
           placeholder="vd: Khuyến khích đặt tính dọc. Khi nhớ, viết số nhớ nhỏ phía trên cột bên trái."
+          value={context}
+          onChange={(e) => setContext(e.target.value)}
         />
         <p className="text-muted-foreground text-xs">
           Cô Mây sẽ dùng nội dung này khi trò chuyện với học sinh để dạy đúng cách lớp đang học.

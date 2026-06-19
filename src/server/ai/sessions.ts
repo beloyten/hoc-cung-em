@@ -3,7 +3,7 @@
 import "server-only"
 import { and, desc, eq, isNull } from "drizzle-orm"
 import { db } from "@/db"
-import { aiChats, parentStudents, students, studySessions, studyTopics } from "@/db/schema"
+import { aiChats, classes, parentStudents, students, studySessions, studyTopics } from "@/db/schema"
 import { err, ok, type Result } from "@/lib/types/result"
 import { requireParent } from "@/server/auth"
 import { FLASH } from "./client"
@@ -80,6 +80,8 @@ export interface ChatContextData {
   sessionId: string
   parentId: string
   studentName: string
+  grade: number
+  subject: string
   topicTitle?: string
   topicContext?: string
 }
@@ -96,13 +98,17 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
       sessionId: studySessions.id,
       createdByParentId: aiChats.createdByParentId,
       studentName: students.fullName,
+      grade: classes.grade,
+      classSubject: classes.subject,
       topicTitle: studyTopics.title,
       topicContext: studyTopics.context,
+      topicSubject: studyTopics.subject,
       sessionDeletedAt: studySessions.deletedAt,
     })
     .from(aiChats)
     .innerJoin(studySessions, eq(studySessions.id, aiChats.sessionId))
     .innerJoin(students, eq(students.id, studySessions.studentId))
+    .innerJoin(classes, eq(classes.id, students.classId))
     .leftJoin(studyTopics, eq(studyTopics.id, studySessions.topicId))
     .where(and(eq(aiChats.id, chatId), isNull(studySessions.deletedAt)))
     .limit(1)
@@ -117,6 +123,9 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
     sessionId: row.sessionId,
     parentId: parent.id,
     studentName: row.studentName,
+    grade: row.grade,
+    // topic subject takes priority; fall back to class-level subject
+    subject: row.topicSubject ?? row.classSubject,
     topicTitle: row.topicTitle ?? undefined,
     topicContext: row.topicContext ?? undefined,
   })
