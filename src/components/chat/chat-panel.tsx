@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AI_PERSONA_NAME } from "@/lib/constants"
 
-// Module-level store for pending image URLs keyed by chatId.
-// Avoids storing in a React ref (which triggers react-hooks/refs in useMemo) while
-// still being stable across renders for a given chat session.
+// Module-level stores for pending image data keyed by chatId.
+// Avoids React ref (triggers react-hooks/refs in useMemo) while staying stable across renders.
 const pendingImageUrls = new Map<string, string>()
+const pendingImagePaths = new Map<string, string>()
 
 interface ChatPanelProps {
   chatId: string
@@ -53,13 +53,16 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
         body: { chatId },
         fetch: async (url, init) => {
           try {
-            // Inject imageUrl into the request body if one is pending
+            // Inject imageUrl + imagePath into request body if pending
             let body = init?.body
             const imageUrl = pendingImageUrls.get(chatId)
-            if (typeof body === "string" && imageUrl) {
+            const imagePath = pendingImagePaths.get(chatId)
+            if (typeof body === "string" && (imageUrl ?? imagePath)) {
               const parsed = JSON.parse(body) as Record<string, unknown>
-              parsed.imageUrl = imageUrl
+              if (imageUrl) parsed.imageUrl = imageUrl
+              if (imagePath) parsed.imagePath = imagePath
               pendingImageUrls.delete(chatId)
+              pendingImagePaths.delete(chatId)
               body = JSON.stringify(parsed)
             }
             const res = await fetch(url, { ...(init as RequestInit), body })
@@ -128,6 +131,7 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
     setImageFile(null)
     setImagePreview(null)
     pendingImageUrls.delete(chatId)
+    pendingImagePaths.delete(chatId)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -143,13 +147,14 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
         fd.append("chatId", chatId)
         fd.append("file", imageFile)
         const res = await fetch("/api/chat-image-upload", { method: "POST", body: fd })
-        const json = (await res.json()) as { imageUrl?: string; error?: string }
+        const json = (await res.json()) as { imageUrl?: string; storagePath?: string; error?: string }
         if (!res.ok || !json.imageUrl) {
           setServerError(json.error ?? "Upload ảnh thất bại. Vui lòng thử lại.")
           setIsUploading(false)
           return
         }
         pendingImageUrls.set(chatId, json.imageUrl)
+        if (json.storagePath) pendingImagePaths.set(chatId, json.storagePath)
       } catch {
         setServerError("Không thể upload ảnh. Vui lòng thử lại.")
         setIsUploading(false)
@@ -158,8 +163,10 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
       setIsUploading(false)
     }
 
-    // Clear image state before sending
-    removeImage()
+    // Clear image UI; Maps are read and deleted by transport after request fires
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImageFile(null)
+    setImagePreview(null)
     sendMessage({ text: text || "📷 Con gửi ảnh đề bài để hỏi Cô Mây." })
     setInput("")
   }

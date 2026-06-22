@@ -88,5 +88,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Không tạo được URL ảnh." }, { status: 500 })
   }
 
-  return NextResponse.json({ imageUrl: data.signedUrl })
+  return NextResponse.json({ imageUrl: data.signedUrl, storagePath: path })
 }

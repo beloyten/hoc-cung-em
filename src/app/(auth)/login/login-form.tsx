@@ -37,11 +37,11 @@ export function LoginForm({ role }: { role?: Role }) {
     } else {
       const msg = result.error.message.toLowerCase()
       const friendly =
-        msg.includes("rate limit") || msg.includes("too many")
+        msg.includes("rate limit") || msg.includes("too many") || msg.includes("security purposes")
           ? "Bạn đã gửi quá nhiều lần. Vui lòng chờ vài phút rồi thử lại."
           : msg.includes("invalid") || msg.includes("sms provider")
             ? "Số điện thoại không hợp lệ hoặc chưa được hỗ trợ."
-            : result.error.message
+            : "Có lỗi xảy ra. Vui lòng thử lại."
       setPhoneMsg({ type: "err", text: friendly })
     }
   }
@@ -56,9 +56,11 @@ export function LoginForm({ role }: { role?: Role }) {
       // Chuyển sang trang nhập OTP email — tránh cross-browser (Gmail in-app browser)
       router.push(`/login/verify?email=${encodeURIComponent(email)}${roleQuery}`)
     } else {
-      const friendly = result.error.message.toLowerCase().includes("rate limit")
-        ? "Bạn vừa yêu cầu quá nhiều lần. Vui lòng chờ vài phút rồi thử lại."
-        : result.error.message
+      const msg2 = result.error.message.toLowerCase()
+      const friendly =
+        msg2.includes("rate limit") || msg2.includes("security purposes") || msg2.includes("too many")
+          ? "Bạn vừa yêu cầu quá nhiều lần. Vui lòng chờ vài phút rồi thử lại."
+          : "Có lỗi xảy ra. Vui lòng thử lại."
       setEmailMsg({ type: "err", text: friendly })
     }
   }

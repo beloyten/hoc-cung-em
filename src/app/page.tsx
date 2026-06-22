@@ -3,6 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { AnimatedChatDemo } from "@/components/shared/animated-chat-demo"
+import { ScrollReveal } from "@/components/shared/scroll-reveal"
 import { AI_PERSONA_NAME, APP_NAME, APP_SLOGAN, ROUTES } from "@/lib/constants"
 
 export const metadata: Metadata = {
@@ -79,45 +80,61 @@ export default function Home() {
         {/* Chat demo */}
         <section className="bg-white px-6 py-16">
           <div className="mx-auto max-w-4xl">
-            <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                Cô Mây dạy như thế nào?
-              </h2>
-              <p className="mt-3 text-slate-600">
-                Không bao giờ cho đáp án — chỉ gợi ý từng bước để em tự nghĩ ra.
+            <ScrollReveal>
+              <div className="mb-10 text-center">
+                <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                  Cô Mây dạy như thế nào?
+                </h2>
+                <p className="mt-3 text-slate-600">
+                  Không bao giờ cho đáp án — chỉ gợi ý từng bước để em tự nghĩ ra.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <AnimatedChatDemo />
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.15}>
+              <p className="mt-4 text-center text-sm text-slate-500">
+                Học sinh tự tìm ra đáp án — Cô Mây chỉ đặt câu hỏi đúng lúc.
               </p>
-            </div>
-
-            <AnimatedChatDemo />
-
-            <p className="mt-4 text-center text-sm text-slate-500">
-              Học sinh tự tìm ra đáp án — Cô Mây chỉ đặt câu hỏi đúng lúc.
-            </p>
+            </ScrollReveal>
           </div>
         </section>
 
         {/* How it works */}
         <section className="bg-slate-50 px-6 py-16">
           <div className="mx-auto max-w-4xl">
-            <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Hoạt động thế nào?</h2>
-            </div>
+            <ScrollReveal>
+              <div className="mb-10 text-center">
+                <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                  Hoạt động thế nào?
+                </h2>
+              </div>
+            </ScrollReveal>
             <div className="grid gap-8 sm:grid-cols-3">
-              <Step
-                number="1"
-                title="Giáo viên tạo chủ đề"
-                description="GV đăng ký lớp, tạo chủ đề tuần và gửi mã mời cho phụ huynh. Chỉ mất 2 phút."
-              />
-              <Step
-                number="2"
-                title="Học sinh hỏi Cô Mây"
-                description="Phụ huynh mở app, con nhắn tin hỏi bài. Cô Mây dẫn dắt bằng câu hỏi Socratic — không cho đáp án sẵn."
-              />
-              <Step
-                number="3"
-                title="Phụ huynh & GV theo dõi"
-                description="Báo cáo học tập hàng tuần qua email. GV xem insight cả lớp — phần nào học sinh còn vướng mắc."
-              />
+              <ScrollReveal delay={0}>
+                <Step
+                  number="1"
+                  title="Giáo viên tạo chủ đề"
+                  description="GV đăng ký lớp, tạo chủ đề tuần và gửi mã mời cho phụ huynh. Chỉ mất 2 phút."
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.1}>
+                <Step
+                  number="2"
+                  title="Học sinh hỏi Cô Mây"
+                  description="Phụ huynh mở app, con nhắn tin hỏi bài. Cô Mây dẫn dắt bằng câu hỏi Socratic — không cho đáp án sẵn."
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.2}>
+                <Step
+                  number="3"
+                  title="Phụ huynh & GV theo dõi"
+                  description="Báo cáo học tập hàng tuần qua email. GV xem insight cả lớp — phần nào học sinh còn vướng mắc."
+                />
+              </ScrollReveal>
             </div>
           </div>
         </section>
@@ -125,46 +142,57 @@ export default function Home() {
         {/* Features by role */}
         <section className="bg-white px-6 py-16">
           <div className="mx-auto max-w-4xl">
-            <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Dành cho cả ba bên</h2>
-            </div>
+            <ScrollReveal>
+              <div className="mb-10 text-center">
+                <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                  Dành cho cả ba bên
+                </h2>
+              </div>
+            </ScrollReveal>
             <div className="grid gap-6 sm:grid-cols-3">
-              <RoleCard
-                emoji="👦"
-                role="Học sinh"
-                color="sky"
-                features={[
-                  "Hỏi bài 24/7, không cần chờ",
-                  "Cô Mây kiên nhẫn, không phán xét",
-                  "Tự tin hơn khi tự tìm ra đáp án",
-                ]}
-              />
-              <RoleCard
-                emoji="👨‍👩‍👦"
-                role="Phụ huynh"
-                color="violet"
-                features={[
-                  "Xem toàn bộ hội thoại của con",
-                  "Nhận báo cáo học tập hàng tuần",
-                  "Yên tâm khi con học đúng cách",
-                ]}
-              />
-              <RoleCard
-                emoji="👩‍🏫"
-                role="Giáo viên"
-                color="emerald"
-                features={[
-                  "Tạo chủ đề, quản lý lớp dễ dàng",
-                  "Insight: phần nào cả lớp vướng",
-                  "Tiết kiệm thời gian giải đáp ngoài giờ",
-                ]}
-              />
+              <ScrollReveal delay={0}>
+                <RoleCard
+                  emoji="👦"
+                  role="Học sinh"
+                  color="sky"
+                  features={[
+                    "Hỏi bài 24/7, không cần chờ",
+                    "Cô Mây kiên nhẫn, không phán xét",
+                    "Tự tin hơn khi tự tìm ra đáp án",
+                  ]}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.1}>
+                <RoleCard
+                  emoji="👨‍👩‍👦"
+                  role="Phụ huynh"
+                  color="violet"
+                  features={[
+                    "Xem toàn bộ hội thoại của con",
+                    "Nhận báo cáo học tập hàng tuần",
+                    "Yên tâm khi con học đúng cách",
+                  ]}
+                />
+              </ScrollReveal>
+              <ScrollReveal delay={0.2}>
+                <RoleCard
+                  emoji="👩‍🏫"
+                  role="Giáo viên"
+                  color="emerald"
+                  features={[
+                    "Tạo chủ đề, quản lý lớp dễ dàng",
+                    "Insight: phần nào cả lớp vướng",
+                    "Tiết kiệm thời gian giải đáp ngoài giờ",
+                  ]}
+                />
+              </ScrollReveal>
             </div>
           </div>
         </section>
 
         {/* CTA bottom */}
         <section className="bg-sky-600 px-6 py-16 text-center text-white">
+          <ScrollReveal>
           <div className="mx-auto max-w-2xl">
             <h2 className="text-2xl font-bold sm:text-3xl">
               Bắt đầu ngay hôm nay — hoàn toàn miễn phí
@@ -187,6 +215,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
+          </ScrollReveal>
         </section>
       </main>
 

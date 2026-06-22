@@ -47,7 +47,7 @@ export function VerifyOTPForm({
       const friendly =
         msg.includes("invalid") || msg.includes("expired")
           ? "Mã OTP không đúng hoặc đã hết hạn. Vui lòng thử lại hoặc gửi lại mã."
-          : result.error.message
+          : "Có lỗi xảy ra. Vui lòng thử lại."
       setMessage({ type: "err", text: friendly })
       setOtp("")
       inputRef.current?.focus()

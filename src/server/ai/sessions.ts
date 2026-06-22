@@ -98,6 +98,7 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
       sessionId: studySessions.id,
       createdByParentId: aiChats.createdByParentId,
       studentName: students.fullName,
+      classId: classes.id,
       grade: classes.grade,
       classSubject: classes.subject,
       topicTitle: studyTopics.title,
@@ -118,15 +119,30 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
     return err("FORBIDDEN", "Bạn không có quyền truy cập cuộc trò chuyện này.")
   }
 
+  // Session was created before any topic existed — fall back to latest class topic
+  let topicTitle = row.topicTitle ?? undefined
+  let topicContext = row.topicContext ?? undefined
+  let topicSubject = row.topicSubject ?? undefined
+  if (!topicTitle) {
+    const [latest] = await db
+      .select({ title: studyTopics.title, context: studyTopics.context, subject: studyTopics.subject })
+      .from(studyTopics)
+      .where(eq(studyTopics.classId, row.classId))
+      .orderBy(desc(studyTopics.weekNumber))
+      .limit(1)
+    topicTitle = latest?.title
+    topicContext = latest?.context ?? undefined
+    topicSubject = latest?.subject ?? undefined
+  }
+
   return ok({
     chatId: row.chatId,
     sessionId: row.sessionId,
     parentId: parent.id,
     studentName: row.studentName,
     grade: row.grade,
-    // topic subject takes priority; fall back to class-level subject
-    subject: row.topicSubject ?? row.classSubject,
-    topicTitle: row.topicTitle ?? undefined,
-    topicContext: row.topicContext ?? undefined,
+    subject: topicSubject ?? row.classSubject,
+    topicTitle,
+    topicContext,
   })
 }

@@ -16,6 +16,7 @@ const bodySchema = z.object({
   chatId: z.string().uuid(),
   messages: z.array(z.unknown()),
   imageUrl: z.string().url().optional(),
+  imagePath: z.string().optional(),
 })
 
 // Fallback to 30 if env var is unset or non-numeric.
@@ -80,7 +81,12 @@ export async function POST(req: Request) {
     if (lastUserText) {
       const [row] = await db
         .insert(aiMessages)
-        .values({ chatId: chatCtx.chatId, role: "user", content: lastUserText })
+        .values({
+          chatId: chatCtx.chatId,
+          role: "user",
+          content: lastUserText,
+          ...(parsed.imagePath ? { imagePaths: [parsed.imagePath] } : {}),
+        })
         .returning({ id: aiMessages.id })
       insertedMsgId = row?.id
     }

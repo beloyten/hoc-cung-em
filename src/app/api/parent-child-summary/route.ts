@@ -1,13 +1,12 @@
-// POST /api/parent-child-summary
-// Structured AI summary of a child's learning activity for parent.
 import { NextResponse } from "next/server"
 import { generateObject } from "ai"
 import { z } from "zod"
-import { and, desc, eq, gte, isNull } from "drizzle-orm"
+import { and, count, desc, eq, gte, isNull } from "drizzle-orm"
 import { db } from "@/db"
 import {
   aiChats,
   aiMessages,
+  auditLogs,
   classes,
   parentStudents,
   students,
@@ -71,7 +70,6 @@ export async function POST(req: Request) {
     throw e
   }
 
-  // Verify parent is linked to this student
   const [link] = await db
     .select({ id: parentStudents.id })
     .from(parentStudents)
@@ -84,7 +82,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Không tìm thấy học sinh." }, { status: 403 })
   }
 
-  // Fetch student info
+  const rateSince = new Date(Date.now() - 60 * 60 * 1000)
+  const [limitRow] = await db
+    .select({ n: count() })
+    .from(auditLogs)
+    .where(
+      and(
+        eq(auditLogs.actorType, "parent"),
+        eq(auditLogs.actorId, parentId),
+        eq(auditLogs.action, "child_summary"),
+        gte(auditLogs.createdAt, rateSince),
+      ),
+    )
+  if ((limitRow?.n ?? 0) >= 10) {
+    return NextResponse.json(
+      { error: "Bạn đã xem quá nhiều tóm tắt trong giờ qua. Vui lòng thử lại sau." },
+      { status: 429 },
+    )
+  }
+
   const [student] = await db
     .select({ fullName: students.fullName, classId: students.classId })
     .from(students)
@@ -95,14 +111,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Không tìm thấy học sinh." }, { status: 404 })
   }
 
-  // Fetch class info
   const [cls] = await db
     .select({ name: classes.name, grade: classes.grade, subject: classes.subject })
     .from(classes)
     .where(eq(classes.id, student.classId))
     .limit(1)
 
-  // Latest weekly report (if exists)
   const [weeklyReport] = await db
     .select({
       weekStart: weeklyReports.weekStart,
@@ -115,7 +129,6 @@ export async function POST(req: Request) {
     .orderBy(desc(weeklyReports.weekStart))
     .limit(1)
 
-  // Recent chat messages (last 14 days)
   const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
   const recentMessages = await db
     .select({
@@ -148,7 +161,6 @@ export async function POST(req: Request) {
     } satisfies ChildSummaryResult)
   }
 
-  // Build prompt context
   const msgLines = recentMessages
     .reverse()
     .slice(0, 60)
@@ -184,6 +196,14 @@ Hãy tổng hợp theo schema. Văn phong ấm áp, ngắn gọn, tiếng Việt
       { status: 503 },
     )
   }
+
+  await db.insert(auditLogs).values({
+    actorType: "parent",
+    actorId: parentId,
+    action: "child_summary",
+    resourceType: "student",
+    resourceId: parsed.studentId,
+  })
 
   return NextResponse.json(object)
 }

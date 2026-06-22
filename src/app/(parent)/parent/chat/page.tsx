@@ -3,9 +3,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { and, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/db"
-import { classes, parentStudents, students } from "@/db/schema"
+import { classes, parentStudents, students, studyTopics } from "@/db/schema"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { BackLink, EmptyState, PageContainer, PageHeader } from "@/components/page-layout"
@@ -34,12 +34,27 @@ export default async function ParentChatIndexPage() {
       studentId: students.id,
       studentName: students.fullName,
       className: classes.name,
+      classId: classes.id,
       verified: parentStudents.verifiedByTeacher,
     })
     .from(parentStudents)
     .innerJoin(students, eq(students.id, parentStudents.studentId))
     .innerJoin(classes, eq(classes.id, students.classId))
     .where(and(eq(parentStudents.parentId, parentId)))
+
+  const classIds = Array.from(new Set(linkedStudents.filter((s) => s.verified).map((s) => s.classId)))
+  const topicByClassId = new Map<string, string>()
+  await Promise.all(
+    classIds.map(async (cid) => {
+      const [t] = await db
+        .select({ title: studyTopics.title })
+        .from(studyTopics)
+        .where(eq(studyTopics.classId, cid))
+        .orderBy(desc(studyTopics.weekNumber))
+        .limit(1)
+      if (t?.title) topicByClassId.set(cid, t.title)
+    }),
+  )
 
   return (
     <PageContainer size="sm">
@@ -78,6 +93,11 @@ export default async function ParentChatIndexPage() {
                   )}
                 </div>
                 <p className="text-muted-foreground text-xs">Lớp {s.className}</p>
+                {topicByClassId.get(s.classId) && (
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    📚 Tuần này: {topicByClassId.get(s.classId)}
+                  </p>
+                )}
               </div>
               <StartSessionButton studentId={s.studentId} disabled={!s.verified} />
             </li>

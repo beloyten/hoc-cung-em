@@ -134,6 +134,7 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
             eq(students.classId, c.id),
             gte(aiMessages.createdAt, start),
             lt(aiMessages.createdAt, endExclusive),
+            isNull(students.deletedAt),
           ),
         )
         .orderBy(asc(aiMessages.createdAt))

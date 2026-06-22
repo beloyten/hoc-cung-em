@@ -1,5 +1,3 @@
-// POST /api/teacher-query
-// Streaming analytic AI for teachers — answers questions about their class data.
 import { streamText } from "ai"
 import { z } from "zod"
 import { and, count, desc, eq, gte, inArray, isNull } from "drizzle-orm"
@@ -7,6 +5,7 @@ import { db } from "@/db"
 import {
   aiChats,
   aiMessages,
+  auditLogs,
   classes,
   students,
   studySessions,
@@ -43,7 +42,6 @@ export async function POST(req: Request) {
     throw e
   }
 
-  // Verify teacher owns this class
   const [cls] = await db
     .select({ id: classes.id, name: classes.name, grade: classes.grade, subject: classes.subject })
     .from(classes)
@@ -54,13 +52,30 @@ export async function POST(req: Request) {
     return Response.json({ error: "Không tìm thấy lớp." }, { status: 403 })
   }
 
-  // Build context: student list
+  const rateSince = new Date(Date.now() - 60 * 60 * 1000)
+  const [limitRow] = await db
+    .select({ n: count() })
+    .from(auditLogs)
+    .where(
+      and(
+        eq(auditLogs.actorType, "teacher"),
+        eq(auditLogs.actorId, teacherId),
+        eq(auditLogs.action, "teacher_query"),
+        gte(auditLogs.createdAt, rateSince),
+      ),
+    )
+  if ((limitRow?.n ?? 0) >= 20) {
+    return Response.json(
+      { error: "Bạn đã gửi quá nhiều câu hỏi trong giờ qua. Vui lòng thử lại sau." },
+      { status: 429 },
+    )
+  }
+
   const studentList = await db
     .select({ id: students.id, fullName: students.fullName })
     .from(students)
     .where(and(eq(students.classId, cls.id), isNull(students.deletedAt)))
 
-  // Active topics
   const recentTopics = await db
     .select({ title: studyTopics.title, weekNumber: studyTopics.weekNumber })
     .from(studyTopics)
@@ -68,7 +83,6 @@ export async function POST(req: Request) {
     .orderBy(desc(studyTopics.weekNumber))
     .limit(3)
 
-  // Latest weekly insight
   const [latestInsight] = await db
     .select()
     .from(weeklyInsights)
@@ -76,7 +90,6 @@ export async function POST(req: Request) {
     .orderBy(desc(weeklyInsights.weekStart))
     .limit(1)
 
-  // Recent chat activity — count messages per student last 14 days
   const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
   const studentIds = studentList.map((s) => s.id)
   const activityRows =
@@ -102,7 +115,6 @@ export async function POST(req: Request) {
   const activityMap = new Map(activityRows.map((r) => [r.studentId, Number(r.msgCount)]))
   const studentNameById = new Map(studentList.map((s) => [s.id, s.fullName]))
 
-  // Recent sample questions from students (last 7 days, user role only)
   const recentQuestions =
     studentIds.length > 0
       ? await db
@@ -121,7 +133,6 @@ export async function POST(req: Request) {
           .limit(60)
       : []
 
-  // Format context for the prompt
   const studentLines = studentList
     .map((s) => {
       const msgs = activityMap.get(s.id) ?? 0
@@ -170,6 +181,15 @@ ${questionSample || "(Chưa có hoạt động)"}
     model: google(FLASH),
     system,
     messages: [{ role: "user", content: parsed.question }],
+    onFinish: async () => {
+      await db.insert(auditLogs).values({
+        actorType: "teacher",
+        actorId: teacherId,
+        action: "teacher_query",
+        resourceType: "class",
+        resourceId: parsed.classId,
+      })
+    },
     onError: ({ error }) => {
       console.error("[teacher-query:streamText] error", error)
     },
