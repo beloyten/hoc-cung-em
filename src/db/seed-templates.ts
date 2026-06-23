@@ -1,5 +1,5 @@
 // src/db/seed-templates.ts
-// Seed topic templates — Grade 4 Math + Tiếng Việt (GDPT 2018 framework)
+// Seed topic templates — Lớp 1–5, Toán + Tiếng Việt + các môn khác (GDPT 2018 framework)
 // pnpm db:seed-templates
 //
 // Templates seeded với verified_at = NULL (draft).

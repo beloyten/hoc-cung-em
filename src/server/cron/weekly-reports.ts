@@ -8,6 +8,7 @@ import { db } from "@/db"
 import {
   aiChats,
   aiMessages,
+  classes,
   parents,
   parentStudents,
   students,
@@ -45,13 +46,13 @@ interface MessageLite {
   topicTitle: string | null
 }
 
-function buildPrompt(studentName: string, items: MessageLite[]): string {
+function buildPrompt(studentName: string, grade: number, items: MessageLite[]): string {
   const lines = items
     .slice(0, 200)
     .map((m) => `[${m.role}]${m.topicTitle ? ` (${m.topicTitle})` : ""} ${m.content}`)
     .join("\n")
   return `Bạn là trợ lý phân tích cho ứng dụng HọcCùngEm.
-Học sinh: ${studentName} (lớp 4).
+Học sinh: ${studentName} (lớp ${grade}).
 Đoạn hội thoại tuần qua giữa học sinh và Cô Mây (gia sư AI Socratic):
 
 ${lines}
@@ -99,8 +100,9 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
       }
 
       const [studentRow] = await db
-        .select({ fullName: students.fullName })
+        .select({ fullName: students.fullName, grade: classes.grade })
         .from(students)
+        .innerJoin(classes, eq(classes.id, students.classId))
         .where(eq(students.id, studentId))
         .limit(1)
       if (!studentRow) continue
@@ -139,7 +141,7 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
       const { object } = await generateObject({
         model: google(FLASH),
         schema: reportSchema,
-        prompt: buildPrompt(studentRow.fullName, lite),
+        prompt: buildPrompt(studentRow.fullName, studentRow.grade, lite),
       })
 
       await db.insert(weeklyReports).values({

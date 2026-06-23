@@ -19,7 +19,8 @@ const jetBrainsMono = JetBrains_Mono({
 const APP_NAME = "HocCungEm"
 const APP_DEFAULT_TITLE = "HocCungEm — Học cùng em"
 const APP_TITLE_TEMPLATE = "%s | HocCungEm"
-const APP_DESCRIPTION = "AI không làm bài hộ. AI học cùng em. Trợ giảng Toán lớp 4 cùng Cô Mây."
+const APP_DESCRIPTION =
+  "AI không làm bài hộ. AI học cùng em. Trợ giảng AI cho học sinh tiểu học lớp 1–5 cùng Cô Mây."
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,

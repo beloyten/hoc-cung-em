@@ -6,7 +6,7 @@ import { APP_NAME, APP_SLOGAN, ROUTES } from "@/lib/constants"
 
 export const metadata: Metadata = {
   title: "Chính sách bảo mật",
-  description: `Chính sách bảo mật và quyền riêng tư của ${APP_NAME} — ứng dụng trợ giảng Toán lớp 4.`,
+  description: `Chính sách bảo mật và quyền riêng tư của ${APP_NAME} — ứng dụng trợ giảng AI cho học sinh tiểu học lớp 1–5.`,
 }
 
 export default function PrivacyPage() {
@@ -35,9 +35,9 @@ export default function PrivacyPage() {
         <div className="mt-8 space-y-8 text-slate-700">
           <Section title="1. Giới thiệu">
             <p>
-              {APP_NAME} là ứng dụng trợ giảng Toán lớp 4 sử dụng trí tuệ nhân tạo, được phát triển
-              phục vụ mục đích giáo dục. Chúng tôi cam kết bảo vệ quyền riêng tư của học sinh, phụ
-              huynh và giáo viên sử dụng ứng dụng.
+              {APP_NAME} là ứng dụng trợ giảng AI cho học sinh tiểu học lớp 1–5 sử dụng trí tuệ nhân
+              tạo, được phát triển phục vụ mục đích giáo dục. Chúng tôi cam kết bảo vệ quyền riêng
+              tư của học sinh, phụ huynh và giáo viên sử dụng ứng dụng.
             </p>
           </Section>
 
@@ -65,9 +65,7 @@ export default function PrivacyPage() {
           <Section title="3. Mục đích sử dụng thông tin">
             <ul className="mt-3 list-disc space-y-2 pl-5">
               <li>Cung cấp trải nghiệm học tập cá nhân hóa qua Cô Mây.</li>
-              <li>
-                Gửi báo cáo học tập hàng tuần cho phụ huynh qua email (nếu đã đăng ký email).
-              </li>
+              <li>Gửi báo cáo học tập hàng tuần cho phụ huynh qua email (nếu đã đăng ký email).</li>
               <li>Hỗ trợ giáo viên theo dõi tiến độ và phát hiện học sinh cần hỗ trợ thêm.</li>
               <li>Cải thiện chất lượng hệ thống giáo dục AI.</li>
             </ul>
