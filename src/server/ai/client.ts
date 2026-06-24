@@ -37,7 +37,7 @@ export async function generateObjectWithFallback<SCHEMA extends z.ZodTypeAny>(op
         temperature: opts.temperature ?? 0.4,
         ...(opts.system ? { system: opts.system } : {}),
       })
-      return { object, modelUsed: model }
+      return { object: object as z.infer<SCHEMA>, modelUsed: model }
     } catch (e) {
       lastError = e
       console.warn(`[ai] generateObject thất bại với model ${model}, thử model tiếp theo`, e)

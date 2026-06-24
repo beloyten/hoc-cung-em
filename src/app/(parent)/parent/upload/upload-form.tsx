@@ -78,7 +78,12 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
           urls?: Array<{ signedUrl: string; path: string }>
           error?: string
         }
-        if (!urlRes.ok || !urlJson.uploadId || !urlJson.urls) {
+        if (
+          !urlRes.ok ||
+          !urlJson.uploadId ||
+          !urlJson.urls ||
+          urlJson.urls.length !== files.length
+        ) {
           setError(urlJson.error ?? "Không thể chuẩn bị upload. Vui lòng thử lại.")
           return
         }
@@ -87,10 +92,12 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
         const { uploadId, urls } = urlJson
         const imagePaths: string[] = []
         for (let i = 0; i < files.length; i++) {
-          const putRes = await fetch(urls[i].signedUrl, {
+          const url = urls[i]!
+          const file = files[i]!
+          const putRes = await fetch(url.signedUrl, {
             method: "PUT",
-            body: files[i],
-            headers: { "Content-Type": files[i].type },
+            body: file,
+            headers: { "Content-Type": file.type },
           })
           if (!putRes.ok) {
             setError(
@@ -100,7 +107,7 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
             )
             return
           }
-          imagePaths.push(urls[i].path)
+          imagePaths.push(url.path)
         }
 
         // Bước 3: Lưu metadata vào DB qua Server Action (không có file)

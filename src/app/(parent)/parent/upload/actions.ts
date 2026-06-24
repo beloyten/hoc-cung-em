@@ -40,6 +40,11 @@ export async function saveNotebookUploadAction(data: {
     .limit(1)
   if (!link) return err("FORBIDDEN", "Bạn chưa liên kết với học sinh này.")
 
+  const expectedPrefix = `student-${studentId}/${uploadId}/`
+  if (!imagePaths.every((p) => p.startsWith(expectedPrefix))) {
+    return err("VALIDATION", "Đường dẫn ảnh không hợp lệ.")
+  }
+
   const [s] = await db
     .select({ classId: students.classId })
     .from(students)

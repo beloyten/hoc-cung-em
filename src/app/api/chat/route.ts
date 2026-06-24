@@ -57,8 +57,9 @@ export async function POST(req: Request) {
   if (parsed.imagePath) {
     try {
       imageUrl = await signedNotebookUrl(parsed.imagePath, 60 * 60)
-    } catch {
-      console.warn("[chat:POST] could not create signed URL for imagePath", parsed.imagePath)
+    } catch (e) {
+      console.error("[chat:POST] could not create signed URL for imagePath", parsed.imagePath, e)
+      return Response.json({ error: "Không thể tải ảnh đính kèm. Vui lòng thử lại." }, { status: 500 })
     }
   }
 

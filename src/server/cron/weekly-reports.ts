@@ -1,7 +1,7 @@
 // src/server/cron/weekly-reports.ts
 // Tổng hợp báo cáo tuần cho từng học sinh dựa trên ai_messages của tuần trước.
 import "server-only"
-import { and, asc, eq, gte, lt } from "drizzle-orm"
+import { and, asc, eq, gte, isNull, lt } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import {
@@ -76,7 +76,13 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
   const activity = await db
     .selectDistinct({ studentId: studySessions.studentId })
     .from(studySessions)
-    .where(and(gte(studySessions.startedAt, start), lt(studySessions.startedAt, endExclusive)))
+    .where(
+      and(
+        gte(studySessions.startedAt, start),
+        lt(studySessions.startedAt, endExclusive),
+        isNull(studySessions.deletedAt),
+      ),
+    )
 
   const result: RunResult = {
     weekStart,
@@ -120,6 +126,7 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
         .where(
           and(
             eq(studySessions.studentId, studentId),
+            isNull(studySessions.deletedAt),
             gte(aiMessages.createdAt, start),
             lt(aiMessages.createdAt, endExclusive),
           ),

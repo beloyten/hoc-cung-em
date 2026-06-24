@@ -101,6 +101,7 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
       classId: classes.id,
       grade: classes.grade,
       classSubject: classes.subject,
+      sessionTopicId: studySessions.topicId,
       topicTitle: studyTopics.title,
       topicContext: studyTopics.context,
       topicSubject: studyTopics.subject,
@@ -123,7 +124,7 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
   let topicTitle = row.topicTitle ?? undefined
   let topicContext = row.topicContext ?? undefined
   let topicSubject = row.topicSubject ?? undefined
-  if (!topicTitle) {
+  if (!row.sessionTopicId) {
     const [latest] = await db
       .select({ title: studyTopics.title, context: studyTopics.context, subject: studyTopics.subject })
       .from(studyTopics)
