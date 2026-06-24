@@ -40,13 +40,20 @@ export async function createTopicAction(formData: FormData): Promise<Result<{ id
   if (!parsed.success) return err("VALIDATION", "Dữ liệu không hợp lệ.")
 
   const { teacher } = await requireTeacher()
-  const owns = await assertTeacherOwnsClass(teacher.id, parsed.data.classId)
-  if (!owns) return err("FORBIDDEN", "Bạn không dạy lớp này.")
+  // Lấy môn của lớp để topic kế thừa đúng môn (nguồn chân lý là class.subject,
+  // không tin client). Đồng thời xác thực giáo viên sở hữu lớp.
+  const [cls] = await db
+    .select({ id: classes.id, subject: classes.subject })
+    .from(classes)
+    .where(and(eq(classes.id, parsed.data.classId), eq(classes.teacherId, teacher.id)))
+    .limit(1)
+  if (!cls) return err("FORBIDDEN", "Bạn không dạy lớp này.")
 
   const [row] = await db
     .insert(studyTopics)
     .values({
       classId: parsed.data.classId,
+      subject: cls.subject,
       title: parsed.data.title,
       description: parsed.data.description,
       weekNumber: parsed.data.weekNumber,

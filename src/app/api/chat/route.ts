@@ -7,6 +7,7 @@ import { FLASH, google } from "@/server/ai/client"
 import { aiGuard, FALLBACK_RESPONSE } from "@/server/ai/guard"
 import { systemPromptV2 } from "@/server/ai/prompts"
 import { loadChatForParent } from "@/server/ai/sessions"
+import { signedNotebookUrl } from "@/server/storage/notebooks"
 import { and, count, eq, gt, sql } from "drizzle-orm"
 
 export const runtime = "nodejs"
@@ -15,7 +16,7 @@ export const maxDuration = 60
 const bodySchema = z.object({
   chatId: z.string().uuid(),
   messages: z.array(z.unknown()),
-  imageUrl: z.string().url().optional(),
+  // imageUrl đã bỏ — giờ tự tạo server-side từ imagePath
   imagePath: z.string().optional(),
 })
 
@@ -50,7 +51,16 @@ export async function POST(req: Request) {
   const messages = parsed.messages as UIMessage[]
   const lastUser = messages.findLast((m) => m.role === "user")
   const lastUserText = lastUser ? extractText(lastUser) : ""
-  const imageUrl = parsed.imageUrl
+
+  // Tạo signed URL server-side từ imagePath (client không gửi URL trực tiếp nữa)
+  let imageUrl: string | undefined
+  if (parsed.imagePath) {
+    try {
+      imageUrl = await signedNotebookUrl(parsed.imagePath, 60 * 60)
+    } catch {
+      console.warn("[chat:POST] could not create signed URL for imagePath", parsed.imagePath)
+    }
+  }
 
   console.log("[chat:POST] uiMessages=%d lastRole=%s", messages.length, messages.at(-1)?.role)
 

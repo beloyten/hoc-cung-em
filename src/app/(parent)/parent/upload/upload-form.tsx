@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { uploadNotebookAction } from "./actions"
+import { saveNotebookUploadAction } from "./actions"
 
 interface Child {
   id: string
@@ -62,19 +62,65 @@ export function UploadForm({ childrenList }: { childrenList: Child[] }) {
       setError("Hãy chọn ít nhất 1 ảnh")
       return
     }
-    const fd = new FormData()
-    fd.set("studentId", studentId)
-    fd.set("note", note)
-    for (const f of files) fd.append("files", f)
     startTransition(async () => {
-      const res = await uploadNotebookAction(fd)
-      if (!res.ok) {
-        setError(res.error.message)
-        return
+      try {
+        // Bước 1: Lấy presigned upload URLs từ server
+        const urlRes = await fetch("/api/notebook-upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId,
+            files: files.map((f) => ({ name: f.name, mimeType: f.type, size: f.size })),
+          }),
+        })
+        const urlJson = (await urlRes.json()) as {
+          uploadId?: string
+          urls?: Array<{ signedUrl: string; path: string }>
+          error?: string
+        }
+        if (!urlRes.ok || !urlJson.uploadId || !urlJson.urls) {
+          setError(urlJson.error ?? "Không thể chuẩn bị upload. Vui lòng thử lại.")
+          return
+        }
+
+        // Bước 2: Upload từng ảnh trực tiếp lên Supabase Storage (bypass Vercel)
+        const { uploadId, urls } = urlJson
+        const imagePaths: string[] = []
+        for (let i = 0; i < files.length; i++) {
+          const putRes = await fetch(urls[i].signedUrl, {
+            method: "PUT",
+            body: files[i],
+            headers: { "Content-Type": files[i].type },
+          })
+          if (!putRes.ok) {
+            setError(
+              files.length > 1
+                ? `Tải ảnh ${i + 1}/${files.length} thất bại. Vui lòng thử lại.`
+                : "Tải ảnh thất bại. Vui lòng thử lại.",
+            )
+            return
+          }
+          imagePaths.push(urls[i].path)
+        }
+
+        // Bước 3: Lưu metadata vào DB qua Server Action (không có file)
+        const res = await saveNotebookUploadAction({
+          uploadId,
+          studentId,
+          imagePaths,
+          note: note || undefined,
+        })
+        if (!res.ok) {
+          setError(res.error.message)
+          return
+        }
+
+        setFiles([])
+        setNote("")
+        router.refresh()
+      } catch {
+        setError("Có lỗi xảy ra. Vui lòng thử lại.")
       }
-      setFiles([])
-      setNote("")
-      router.refresh()
     })
   }
 

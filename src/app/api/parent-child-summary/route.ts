@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { generateObject } from "ai"
 import { z } from "zod"
 import { and, count, desc, eq, gte, isNull } from "drizzle-orm"
 import { db } from "@/db"
@@ -15,7 +14,7 @@ import {
   weeklyReports,
 } from "@/db/schema"
 import { AuthError, requireParent } from "@/server/auth"
-import { FLASH, google } from "@/server/ai/client"
+import { generateObjectWithFallback } from "@/server/ai/client"
 
 export const runtime = "nodejs"
 export const maxDuration = 30
@@ -28,24 +27,24 @@ const summarySchema = z.object({
   headline: z
     .string()
     .min(1)
-    .max(120)
-    .describe("1 câu tóm tắt tổng quan tuần học của con (tiếng Việt, ấm áp)."),
+    .max(200)
+    .describe("1 câu tóm tắt tổng quan tuần học của con (ngắn gọn, tiếng Việt, ấm áp)."),
   activeTopics: z
-    .array(z.string().min(1).max(100))
+    .array(z.string().min(1).max(160))
     .max(3)
     .describe("Tối đa 3 chủ đề/bài con đã hỏi nhiều nhất."),
   strengths: z
-    .array(z.string().min(1).max(150))
+    .array(z.string().min(1).max(220))
     .max(3)
     .describe("Tối đa 3 điểm mạnh con thể hiện trong tuần."),
   needsAttention: z
-    .array(z.string().min(1).max(150))
+    .array(z.string().min(1).max(220))
     .max(3)
     .describe("Tối đa 3 mảng con cần luyện thêm."),
   parentTip: z
     .string()
     .min(1)
-    .max(200)
+    .max(300)
     .describe("1 gợi ý cụ thể phụ huynh có thể làm cùng con hôm nay (không phải chung chung)."),
 })
 
@@ -184,8 +183,7 @@ Hãy tổng hợp theo schema. Văn phong ấm áp, ngắn gọn, tiếng Việt
 
   let object: z.infer<typeof summarySchema>
   try {
-    ;({ object } = await generateObject({
-      model: google(FLASH),
+    ;({ object } = await generateObjectWithFallback({
       schema: summarySchema,
       prompt,
     }))

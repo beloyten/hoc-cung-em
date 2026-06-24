@@ -1,5 +1,6 @@
 // src/server/ai/prompts.ts
 // System prompts cho Cô Mây — versioned, không sửa version cũ.
+import { SUBJECT_LABELS, type Subject } from "@/db/schema"
 
 export const SYSTEM_PROMPT_VERSION = "v3.0"
 
@@ -82,14 +83,6 @@ export const RETRY_REMINDER =
 // Subject + grade metadata
 // ---------------------------------------------------------------------------
 
-const SUBJECT_LABELS: Record<string, string> = {
-  math: "Toán",
-  vietnamese: "Tiếng Việt",
-  science: "Khoa học",
-  history_geography: "Lịch sử & Địa lý",
-  social_studies: "Tự nhiên & Xã hội",
-}
-
 /** Hướng dẫn bổ sung theo môn — thay thế phần "gia sư Toán" cứng nhắc. */
 function subjectGuidance(subject: string, grade: number): string {
   const gradeNote =
@@ -122,7 +115,7 @@ export function systemPromptV2(ctx: SessionContext = {}): string {
   const name = ctx.studentName ?? "con"
   const grade = ctx.grade ?? 4
   const subject = ctx.subject ?? "math"
-  const subjectLabel = SUBJECT_LABELS[subject] ?? subject
+  const subjectLabel = SUBJECT_LABELS[subject as Subject] ?? subject
   const topic = ctx.topicTitle ?? ""
 
   return `Bạn là **Cô Mây**, gia sư AI dạy **${subjectLabel} lớp ${grade}**.

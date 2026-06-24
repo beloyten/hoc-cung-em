@@ -1,11 +1,14 @@
-// POST /api/chat-image-upload
-// Upload 1 ảnh đề bài vào chat — trả về signed URL cho Gemini Vision.
+// Đường dẫn này đã được thay thế bởi /api/chat-image-upload-url (presigned URL approach).
+// Client nên gọi /api/chat-image-upload-url để upload ảnh trực tiếp lên Supabase Storage.
 import { NextResponse } from "next/server"
-import { AuthError, requireParent } from "@/server/auth"
-import { adminSupabase, NOTEBOOK_BUCKET } from "@/lib/supabase/admin"
-import { db } from "@/db"
-import { aiChats, studySessions } from "@/db/schema"
-import { and, eq, isNull } from "drizzle-orm"
+
+export async function POST() {
+  return NextResponse.json(
+    { error: "Endpoint này không còn hoạt động. Vui lòng dùng /api/chat-image-upload-url." },
+    { status: 410 },
+  )
+}
+
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB

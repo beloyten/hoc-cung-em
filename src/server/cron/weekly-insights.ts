@@ -2,7 +2,6 @@
 // Tổng hợp insight tuần cho từng lớp (giáo viên xem).
 import "server-only"
 import { and, asc, count, eq, gte, isNull, lt } from "drizzle-orm"
-import { generateObject } from "ai"
 import { z } from "zod"
 import { db } from "@/db"
 import {
@@ -14,7 +13,7 @@ import {
   studyTopics,
   weeklyInsights,
 } from "@/db/schema"
-import { FLASH, google } from "@/server/ai/client"
+import { generateObjectWithFallback } from "@/server/ai/client"
 import { previousWeekStartICT, weekRangeUTC } from "./week"
 
 const insightSchema = z.object({
@@ -151,8 +150,7 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
         .where(and(eq(students.classId, c.id), isNull(students.deletedAt)))
       const totalStudents = Number(enrolledRow?.total ?? 0)
 
-      const { object } = await generateObject({
-        model: google(FLASH),
+      const { object, modelUsed } = await generateObjectWithFallback({
         schema: insightSchema,
         prompt: buildPrompt(c.name, c.grade, totalStudents, messages),
       })
@@ -164,7 +162,7 @@ export async function runWeeklyInsights(now: Date = new Date()): Promise<RunResu
         studentAttention: object.studentAttention,
         teachingSuggestions: object.teachingSuggestions,
         suggestedFocus: object.suggestedFocus,
-        generatedByModel: FLASH,
+        generatedByModel: modelUsed,
       })
 
       result.generated++

@@ -19,6 +19,7 @@ export function VerifyOTPForm({
   const router = useRouter()
   const [otp, setOtp] = useState("")
   const [pending, setPending] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null)
   const [resendCooldown, setResendCooldown] = useState(60)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -39,10 +40,12 @@ export function VerifyOTPForm({
       mode === "phone"
         ? await verifyPhoneOTP(identifier, otp, role)
         : await verifyEmailOTP(identifier, otp, role)
-    setPending(false)
     if (result.ok) {
+      // Giữ nguyên loading trong lúc Next.js load trang mới (1-2s)
+      setRedirecting(true)
       router.push(result.data.redirectTo)
     } else {
+      setPending(false)
       const msg = result.error.message.toLowerCase()
       const friendly =
         msg.includes("invalid") || msg.includes("expired")
@@ -89,7 +92,7 @@ export function VerifyOTPForm({
         disabled={pending || (mode === "phone" ? otp.length !== 6 : otp.length < 6)}
         className="w-full"
       >
-        {pending ? "Đang xác nhận..." : "Xác nhận"}
+        {redirecting ? "Đang chuyển trang…" : pending ? "Đang xác nhận…" : "Xác nhận"}
       </Button>
 
       <button

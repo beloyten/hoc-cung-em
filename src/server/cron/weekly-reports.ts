@@ -2,7 +2,6 @@
 // Tổng hợp báo cáo tuần cho từng học sinh dựa trên ai_messages của tuần trước.
 import "server-only"
 import { and, asc, eq, gte, lt } from "drizzle-orm"
-import { generateObject } from "ai"
 import { z } from "zod"
 import { db } from "@/db"
 import {
@@ -16,7 +15,7 @@ import {
   studyTopics,
   weeklyReports,
 } from "@/db/schema"
-import { FLASH, google } from "@/server/ai/client"
+import { generateObjectWithFallback } from "@/server/ai/client"
 import { sendWeeklyReportEmail } from "@/server/email/weekly-report"
 import { previousWeekStartICT, weekRangeUTC } from "./week"
 
@@ -138,8 +137,7 @@ export async function runWeeklyReports(now: Date = new Date()): Promise<RunResul
         topicTitle: m.topicTitle,
       }))
 
-      const { object } = await generateObject({
-        model: google(FLASH),
+      const { object } = await generateObjectWithFallback({
         schema: reportSchema,
         prompt: buildPrompt(studentRow.fullName, studentRow.grade, lite),
       })

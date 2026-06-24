@@ -8,9 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AI_PERSONA_NAME } from "@/lib/constants"
 
-// Module-level stores for pending image data keyed by chatId.
+// Module-level store for pending image storage path keyed by chatId.
 // Avoids React ref (triggers react-hooks/refs in useMemo) while staying stable across renders.
-const pendingImageUrls = new Map<string, string>()
 const pendingImagePaths = new Map<string, string>()
 
 interface ChatPanelProps {
@@ -53,15 +52,12 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
         body: { chatId },
         fetch: async (url, init) => {
           try {
-            // Inject imageUrl + imagePath into request body if pending
-            let body = init?.body
-            const imageUrl = pendingImageUrls.get(chatId)
-            const imagePath = pendingImagePaths.get(chatId)
-            if (typeof body === "string" && (imageUrl ?? imagePath)) {
-              const parsed = JSON.parse(body) as Record<string, unknown>
-              if (imageUrl) parsed.imageUrl = imageUrl
-              if (imagePath) parsed.imagePath = imagePath
-              pendingImageUrls.delete(chatId)
+          // Inject imagePath into request body if pending; signed URL tạo server-side
+          let body = init?.body
+          const imagePath = pendingImagePaths.get(chatId)
+          if (typeof body === "string" && imagePath) {
+            const parsed = JSON.parse(body) as Record<string, unknown>
+            parsed.imagePath = imagePath
               pendingImagePaths.delete(chatId)
               body = JSON.stringify(parsed)
             }
@@ -130,7 +126,6 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
     if (imagePreview) URL.revokeObjectURL(imagePreview)
     setImageFile(null)
     setImagePreview(null)
-    pendingImageUrls.delete(chatId)
     pendingImagePaths.delete(chatId)
   }
 
@@ -143,20 +138,39 @@ export function ChatPanel({ chatId, initialMessages }: ChatPanelProps) {
     if (imageFile) {
       setIsUploading(true)
       try {
-        const fd = new FormData()
-        fd.append("chatId", chatId)
-        fd.append("file", imageFile)
-        const res = await fetch("/api/chat-image-upload", { method: "POST", body: fd })
-        const json = (await res.json()) as { imageUrl?: string; storagePath?: string; error?: string }
-        if (!res.ok || !json.imageUrl) {
-          setServerError(json.error ?? "Upload ảnh thất bại. Vui lòng thử lại.")
+        // Bước 1: lấy presigned upload URL
+        const urlRes = await fetch("/api/chat-image-upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatId,
+            file: { name: imageFile.name, mimeType: imageFile.type, size: imageFile.size },
+          }),
+        })
+        const urlJson = (await urlRes.json()) as {
+          signedUploadUrl?: string
+          path?: string
+          error?: string
+        }
+        if (!urlRes.ok || !urlJson.signedUploadUrl || !urlJson.path) {
+          setServerError(urlJson.error ?? "Upload ảnh thất bại. Vui lòng thử lại.")
           setIsUploading(false)
           return
         }
-        pendingImageUrls.set(chatId, json.imageUrl)
-        if (json.storagePath) pendingImagePaths.set(chatId, json.storagePath)
+        // Bước 2: PUT file trực tiếp lên Supabase (bypass Vercel)
+        const putRes = await fetch(urlJson.signedUploadUrl, {
+          method: "PUT",
+          body: imageFile,
+          headers: { "Content-Type": imageFile.type },
+        })
+        if (!putRes.ok) {
+          setServerError("Ảnh không thể gửi được. Con thử lại nhé.")
+          setIsUploading(false)
+          return
+        }
+        pendingImagePaths.set(chatId, urlJson.path)
       } catch {
-        setServerError("Không thể upload ảnh. Vui lòng thử lại.")
+        setServerError("Không thể upload ảnh. Con thử lại nhé.")
         setIsUploading(false)
         return
       }
