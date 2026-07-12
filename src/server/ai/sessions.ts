@@ -24,7 +24,7 @@ export async function startStudySession(
 ): Promise<Result<StartStudySessionData>> {
   const { parent } = await requireParent()
 
-  // Xác nhận parent thực sự liên kết với học sinh này.
+  // Xác nhận parent thực sự liên kết với học sinh này VÀ đã được giáo viên xác nhận.
   const [link] = await db
     .select()
     .from(parentStudents)
@@ -33,6 +33,8 @@ export async function startStudySession(
     )
     .limit(1)
   if (!link) return err("FORBIDDEN", "Bạn chưa liên kết với học sinh này.")
+  if (!link.verifiedByTeacher)
+    return err("FORBIDDEN", "Liên kết với học sinh này chưa được giáo viên xác nhận.")
 
   let topicId = input.topicId
   if (!topicId) {
@@ -97,6 +99,7 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
       chatId: aiChats.id,
       sessionId: studySessions.id,
       createdByParentId: aiChats.createdByParentId,
+      studentId: students.id,
       studentName: students.fullName,
       classId: classes.id,
       grade: classes.grade,
@@ -120,13 +123,27 @@ export async function loadChatForParent(chatId: string): Promise<Result<ChatCont
     return err("FORBIDDEN", "Bạn không có quyền truy cập cuộc trò chuyện này.")
   }
 
+  // Phòng trường hợp liên kết bị giáo viên gỡ xác nhận sau khi chat đã tạo.
+  const [link] = await db
+    .select({ verifiedByTeacher: parentStudents.verifiedByTeacher })
+    .from(parentStudents)
+    .where(and(eq(parentStudents.parentId, parent.id), eq(parentStudents.studentId, row.studentId)))
+    .limit(1)
+  if (!link?.verifiedByTeacher) {
+    return err("FORBIDDEN", "Liên kết với học sinh này chưa được giáo viên xác nhận.")
+  }
+
   // Session was created before any topic existed — fall back to latest class topic
   let topicTitle = row.topicTitle ?? undefined
   let topicContext = row.topicContext ?? undefined
   let topicSubject = row.topicSubject ?? undefined
   if (!row.sessionTopicId) {
     const [latest] = await db
-      .select({ title: studyTopics.title, context: studyTopics.context, subject: studyTopics.subject })
+      .select({
+        title: studyTopics.title,
+        context: studyTopics.context,
+        subject: studyTopics.subject,
+      })
       .from(studyTopics)
       .where(eq(studyTopics.classId, row.classId))
       .orderBy(desc(studyTopics.weekNumber))

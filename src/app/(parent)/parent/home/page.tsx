@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: "Trang chính — Phụ huynh",
 }
 
+function daysAgo(n: number): Date {
+  return new Date(Date.now() - n * 24 * 60 * 60 * 1000)
+}
+
 export default async function ParentHomePage() {
   let parentId: string
   let parentName: string
@@ -54,8 +58,8 @@ export default async function ParentHomePage() {
     verifiedStudents.length === 1 ? topicByClassId.get(verifiedStudents[0]!.classId) : undefined
 
   let recentReviews: Array<{ studentName: string; uploadId: string }> = []
-  if (myStudents.length > 0) {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  if (verifiedStudents.length > 0) {
+    const sevenDaysAgo = daysAgo(7)
     recentReviews = await db
       .select({ studentName: students.fullName, uploadId: notebookUploads.id })
       .from(teacherReviews)
@@ -65,7 +69,7 @@ export default async function ParentHomePage() {
         and(
           inArray(
             notebookUploads.studentId,
-            myStudents.map((s) => s.id),
+            verifiedStudents.map((s) => s.id),
           ),
           gte(teacherReviews.reviewedAt, sevenDaysAgo),
         ),
@@ -121,10 +125,9 @@ export default async function ParentHomePage() {
             📝
           </span>
           <span className="flex-1">
-            Giáo viên đã chấm vở của{" "}
-            <strong>{recentReviews[0]?.studentName}</strong>
-            {recentReviews.length > 1 ? ` và ${recentReviews.length - 1} vở khác` : ""}
-            {" "}— xem nhận xét
+            Giáo viên đã chấm vở của <strong>{recentReviews[0]?.studentName}</strong>
+            {recentReviews.length > 1 ? ` và ${recentReviews.length - 1} vở khác` : ""} — xem nhận
+            xét
           </span>
           <span aria-hidden="true">→</span>
         </Link>
@@ -163,7 +166,7 @@ export default async function ParentHomePage() {
         </Link>
       </div>
 
-      {myStudents.length > 0 && <ChildSummaryWidget students={myStudents} />}
+      {verifiedStudents.length > 0 && <ChildSummaryWidget students={verifiedStudents} />}
     </main>
   )
 }

@@ -2,7 +2,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { desc, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import { parentStudents, students, weeklyReports } from "@/db/schema"
 import { buttonVariants } from "@/components/ui/button"
@@ -43,7 +43,7 @@ export default async function ParentReportsPage() {
     .select({ id: students.id, fullName: students.fullName })
     .from(parentStudents)
     .innerJoin(students, eq(students.id, parentStudents.studentId))
-    .where(eq(parentStudents.parentId, parentId))
+    .where(and(eq(parentStudents.parentId, parentId), eq(parentStudents.verifiedByTeacher, true)))
 
   const studentIds = myStudents.map((s) => s.id)
   const studentNameById = new Map(myStudents.map((s) => [s.id, s.fullName]))

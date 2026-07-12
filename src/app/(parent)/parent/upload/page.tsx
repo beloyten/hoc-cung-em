@@ -33,15 +33,20 @@ export default async function ParentUploadPage() {
   }
 
   const myChildren = await db
-    .select({ id: students.id, fullName: students.fullName })
+    .select({
+      id: students.id,
+      fullName: students.fullName,
+      verified: parentStudents.verifiedByTeacher,
+    })
     .from(parentStudents)
     .innerJoin(students, eq(students.id, parentStudents.studentId))
     .where(eq(parentStudents.parentId, parentId))
 
   const studentIds = myChildren.map((c) => c.id)
+  const verifiedStudentIds = new Set(myChildren.filter((c) => c.verified).map((c) => c.id))
   const childNameById = new Map(myChildren.map((c) => [c.id, c.fullName]))
 
-  const uploads =
+  const uploadsRaw =
     studentIds.length === 0
       ? []
       : await db
@@ -51,11 +56,18 @@ export default async function ParentUploadPage() {
             imagePaths: notebookUploads.imagePaths,
             note: notebookUploads.note,
             uploadedAt: notebookUploads.uploadedAt,
+            uploadedByParentId: notebookUploads.uploadedByParentId,
           })
           .from(notebookUploads)
           .where(inArray(notebookUploads.studentId, studentIds))
           .orderBy(desc(notebookUploads.uploadedAt))
-          .limit(20)
+          .limit(40)
+
+  // Chỉ hiển thị ảnh của học sinh đã được GV xác nhận liên kết, hoặc ảnh do chính mình tải lên
+  // — tránh phụ huynh tự liên kết (chưa xác nhận) xem được vở của học sinh khác.
+  const uploads = uploadsRaw
+    .filter((u) => verifiedStudentIds.has(u.studentId) || u.uploadedByParentId === parentId)
+    .slice(0, 20)
 
   const visible = uploads.filter((u) => !!u.imagePaths?.length)
   // Tạo signed URL ảnh đầu tiên để hiển thị thumbnail

@@ -38,6 +38,7 @@ export default async function ParentUploadDetail({
       imagePaths: notebookUploads.imagePaths,
       note: notebookUploads.note,
       uploadedAt: notebookUploads.uploadedAt,
+      uploadedByParentId: notebookUploads.uploadedByParentId,
       studentName: students.fullName,
     })
     .from(notebookUploads)
@@ -48,11 +49,15 @@ export default async function ParentUploadDetail({
   if (!row) notFound()
 
   const [link] = await db
-    .select({ id: parentStudents.id })
+    .select({ verifiedByTeacher: parentStudents.verifiedByTeacher })
     .from(parentStudents)
     .where(and(eq(parentStudents.parentId, parentId), eq(parentStudents.studentId, row.studentId)))
     .limit(1)
-  if (!link) redirect("/parent/upload")
+
+  // Chỉ xem được nếu: liên kết đã được GV xác nhận, hoặc chính mình là người tải ảnh lên
+  // — tránh phụ huynh tự liên kết (chưa xác nhận) xem được vở + nhận xét của học sinh khác.
+  const canView = link && (link.verifiedByTeacher || row.uploadedByParentId === parentId)
+  if (!canView) redirect("/parent/upload")
 
   const [review] = await db
     .select({ rating: teacherReviews.rating, note: teacherReviews.note })

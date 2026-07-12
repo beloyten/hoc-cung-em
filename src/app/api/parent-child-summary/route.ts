@@ -70,14 +70,14 @@ export async function POST(req: Request) {
   }
 
   const [link] = await db
-    .select({ id: parentStudents.id })
+    .select({ id: parentStudents.id, verifiedByTeacher: parentStudents.verifiedByTeacher })
     .from(parentStudents)
     .where(
       and(eq(parentStudents.parentId, parentId), eq(parentStudents.studentId, parsed.studentId)),
     )
     .limit(1)
 
-  if (!link) {
+  if (!link || !link.verifiedByTeacher) {
     return NextResponse.json({ error: "Không tìm thấy học sinh." }, { status: 403 })
   }
 
